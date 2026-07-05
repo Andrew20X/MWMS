@@ -1,0 +1,170 @@
+erDiagram
+
+    DEPARTMENTS {
+        int DepartmentId PK
+        string Name
+        string Description
+    }
+
+    SHIFTS {
+        int ShiftId PK
+        string ShiftName
+        time StartTime
+        time EndTime
+        int GraceMinutes
+        decimal WorkingHours
+        boolean IsFlexible
+    }
+
+    ROLES {
+        int RoleId PK
+        string RoleName
+        string Description
+    }
+
+    EMPLOYEES {
+        int EmployeeId PK
+        string EmployeeCode UK
+        int DeviceUserId UK
+        string FullName
+        string Email
+        string Phone
+        date HireDate
+        boolean IsActive
+        int DepartmentId FK
+        int ShiftId FK
+    }
+
+    USERS {
+        int UserId PK
+        int EmployeeId FK
+        int RoleId FK
+        string Username
+        string PasswordHash
+        boolean IsActive
+        datetime LastLogin
+    }
+
+    DEVICES {
+        int DeviceId PK
+        string DeviceName
+        string IPAddress
+        int Port
+        string Location
+        boolean IsConnected
+        datetime LastSync
+    }
+
+    ATTENDANCE_LOGS {
+        bigint LogId PK
+        int DeviceId FK
+        int DeviceUserId
+        datetime PunchTime
+        int VerifyMode
+        int PunchState
+        boolean IsProcessed
+    }
+
+    ATTENDANCE_STATUS {
+        int StatusId PK
+        string StatusName
+        string Description
+    }
+
+    DAILY_ATTENDANCE {
+        bigint AttendanceId PK
+        int EmployeeId FK
+        date AttendanceDate
+        datetime CheckIn
+        datetime CheckOut
+        decimal WorkingHours
+        int LateMinutes
+        int EarlyLeaveMinutes
+        int OvertimeMinutes
+        int StatusId FK
+        datetime LastUpdated
+    }
+
+    LEAVE_REQUESTS {
+        int LeaveId PK
+        int EmployeeId FK
+        date StartDate
+        date EndDate
+        string LeaveType
+        string Reason
+        string Status
+        int ApprovedBy FK
+        datetime CreatedAt
+    }
+
+    PERMISSION_REQUESTS {
+        int PermissionId PK
+        int EmployeeId FK
+        date PermissionDate
+        time FromTime
+        time ToTime
+        string Reason
+        string Status
+        int ApprovedBy FK
+        datetime CreatedAt
+    }
+
+    ATTENDANCE_CORRECTIONS {
+        int CorrectionId PK
+        int EmployeeId FK
+        date AttendanceDate
+        datetime RequestedCheckIn
+        datetime RequestedCheckOut
+        string Reason
+        string Status
+        int ApprovedBy FK
+        datetime CreatedAt
+    }
+
+    ATTENDANCE_EXCEPTIONS {
+        int ExceptionId PK
+        int EmployeeId FK
+        date AttendanceDate
+        string ExceptionType
+        string Description
+        boolean IsResolved
+        datetime CreatedAt
+    }
+
+    HOLIDAYS {
+        int HolidayId PK
+        string HolidayName
+        date HolidayDate
+        boolean IsRecurring
+    }
+
+    NOTIFICATIONS {
+        int NotificationId PK
+        int UserId FK
+        string Title
+        string Message
+        boolean IsRead
+        datetime CreatedAt
+    }
+
+    DEPARTMENTS ||--o{ EMPLOYEES : contains
+    SHIFTS ||--o{ EMPLOYEES : assigned_to
+
+    EMPLOYEES ||--|| USERS : account
+    ROLES ||--o{ USERS : has
+
+    DEVICES ||--o{ ATTENDANCE_LOGS : generates
+
+    EMPLOYEES ||--o{ DAILY_ATTENDANCE : has
+    ATTENDANCE_STATUS ||--o{ DAILY_ATTENDANCE : status
+
+    EMPLOYEES ||--o{ LEAVE_REQUESTS : submits
+    EMPLOYEES ||--o{ PERMISSION_REQUESTS : submits
+    EMPLOYEES ||--o{ ATTENDANCE_CORRECTIONS : submits
+    EMPLOYEES ||--o{ ATTENDANCE_EXCEPTIONS : has
+
+    USERS ||--o{ NOTIFICATIONS : receives
+
+    USERS ||--o{ LEAVE_REQUESTS : approves
+    USERS ||--o{ PERMISSION_REQUESTS : approves
+    USERS ||--o{ ATTENDANCE_CORRECTIONS : approves

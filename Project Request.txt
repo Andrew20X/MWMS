@@ -1,0 +1,424 @@
+# Project Master Prompt
+
+## Project Title
+
+**Measuresoft Workforce Management System (MWMS)**
+
+## Project Overview
+
+I am building a real-world enterprise web application for **Measuresoft Oil Services**. This is **not** a university CRUD project. The system is intended to replace the company's current Excel-based attendance and timesheet process with a fully automated workforce management system.
+
+The project should be designed using enterprise software engineering principles, clean architecture, scalability, maintainability, and security.
+
+---
+
+# Current Workflow
+
+Currently, the company uses:
+
+* Fingerprint attendance devices (ZKTeco devices communicating over TCP/IP, usually on port 4370).
+* Attendance logs collected from fingerprint devices.
+* Monthly Excel Timesheets.
+* Employees manually fill attendance information.
+* HR manually reviews and calculates attendance.
+
+Problems:
+
+* Manual data entry
+* Human errors
+* Time consuming
+* Difficult reporting
+* No dashboards
+* No approval workflow
+* No centralized data
+
+---
+
+# Proposed Solution
+
+Build a complete web application that automates the entire attendance process.
+
+The system should:
+
+* Read attendance logs from fingerprint devices.
+* Store raw logs.
+* Process attendance automatically.
+* Calculate working hours.
+* Calculate lateness.
+* Calculate overtime.
+* Calculate early leave.
+* Detect missing check-in/check-out.
+* Generate monthly timesheets automatically.
+* Export Excel files matching the company's current format.
+* Provide dashboards for Employees, Managers, HR, and Admin.
+
+The Excel file should become an **output** of the system instead of the primary data source.
+
+---
+
+# Main Modules
+
+## Authentication
+
+* Login
+* Logout
+* JWT Authentication
+* Refresh Tokens
+* Role-Based Authorization
+* Forgot Password
+
+---
+
+## Employee Management
+
+* Employees
+* Departments
+* Positions
+* Shifts
+* Employee Profiles
+
+---
+
+## Attendance Management
+
+* Fingerprint synchronization
+* Attendance logs
+* Daily attendance
+* Monthly attendance
+* Attendance calculations
+* Attendance history
+
+---
+
+## Attendance Engine
+
+This is the core business logic.
+
+Responsibilities:
+
+* Read raw logs
+* Group logs by employee and date
+* Determine first punch as Check-In
+* Determine last punch as Check-Out
+* Calculate working hours
+* Calculate late minutes
+* Calculate early leave
+* Calculate overtime
+* Detect attendance exceptions
+* Generate daily attendance records
+
+---
+
+## Leave Management
+
+Employees can:
+
+* Request leave
+* View leave history
+
+Managers can:
+
+* Approve
+* Reject
+
+HR can manage leave policies.
+
+---
+
+## Permission Management
+
+Instead of manually entering PN-1 and PN-2 in Excel:
+
+Employees submit permission requests.
+
+System should:
+
+* Automatically count permissions.
+* Prevent requests exceeding company policy.
+* Update attendance automatically after approval.
+
+---
+
+## Attendance Corrections
+
+Employees may request attendance corrections if they forgot to fingerprint.
+
+Workflow:
+
+Employee
+
+↓
+
+Correction Request
+
+↓
+
+Manager Approval
+
+↓
+
+HR Review (optional)
+
+↓
+
+Attendance Updated Automatically
+
+---
+
+## Attendance Exceptions
+
+Automatically detect:
+
+* Missing Check-In
+* Missing Check-Out
+* Duplicate Punches
+* Invalid Logs
+* Device Errors
+
+Provide an HR dashboard for unresolved exceptions.
+
+---
+
+## Reports
+
+Generate:
+
+* Daily Report
+* Monthly Report
+* Employee Report
+* Department Report
+* Late Report
+* Overtime Report
+* Attendance Summary
+
+Export:
+
+* Excel
+* PDF
+
+---
+
+## Notifications
+
+Notify employees when:
+
+* Missing Check-Out
+* Leave Approved
+* Permission Approved
+* Correction Approved
+* Monthly Timesheet Generated
+
+---
+
+## Dashboards
+
+### Employee Dashboard
+
+* Today's attendance
+* Monthly attendance
+* Working hours
+* Overtime
+* Remaining permissions
+* Leave balance
+
+### Manager Dashboard
+
+* Team attendance
+* Pending approvals
+* Team statistics
+
+### HR Dashboard
+
+* Employees present
+* Late employees
+* Absent employees
+* Overtime
+* Attendance exceptions
+* Reports
+
+### Admin Dashboard
+
+* Users
+* Roles
+* Devices
+* System Settings
+* Audit Logs
+
+---
+
+# Fingerprint Integration
+
+Fingerprint devices communicate using TCP/IP.
+
+Typical configuration:
+
+* Device IP
+* Device Port (4370)
+* Device Timeout
+
+The system should:
+
+* Connect to fingerprint devices.
+* Synchronize attendance logs.
+* Store raw logs.
+* Process attendance automatically.
+
+---
+
+# Database Philosophy
+
+The database is the single source of truth.
+
+Excel files are generated from database data.
+
+Raw fingerprint logs must never be modified.
+
+Attendance should always be calculated from raw logs.
+
+---
+
+# Suggested Core Database Tables
+
+* Employees
+* Users
+* Roles
+* Departments
+* Shifts
+* Devices
+* AttendanceLogs
+* DailyAttendance
+* AttendanceStatus
+* LeaveRequests
+* PermissionRequests
+* AttendanceCorrections
+* AttendanceExceptions
+* Holidays
+* Notifications
+
+Additional tables may be added if needed.
+
+---
+
+# Technical Stack
+
+Backend:
+
+* ASP.NET Core Web API
+* Entity Framework Core
+* SQL Server
+
+Frontend:
+
+* React
+* Material UI
+
+Authentication:
+
+* JWT
+* Refresh Tokens
+
+Architecture:
+
+* Clean Architecture
+* Repository Pattern
+* Unit of Work
+* Dependency Injection
+
+Real-time:
+
+* SignalR
+
+Reports:
+
+* Excel Export
+* PDF Export
+
+Deployment:
+
+* Docker
+* IIS or Azure
+
+---
+
+# Software Engineering Principles
+
+Always follow:
+
+* SOLID Principles
+* Clean Code
+* DRY
+* KISS
+* Separation of Concerns
+* Layered Architecture
+
+---
+
+# Development Roadmap
+
+Phase 1
+
+* Requirements Analysis
+* Database Design
+* ERD
+* Data Dictionary
+
+Phase 2
+
+* Clean Architecture
+* Authentication
+* Employee Module
+* Department Module
+* Shift Module
+
+Phase 3
+
+* Fingerprint Integration
+* Attendance Logs
+* Attendance Engine
+
+Phase 4
+
+* Leave
+* Permission
+* Attendance Corrections
+
+Phase 5
+
+* Notifications
+* Reports
+* Dashboards
+
+Phase 6
+
+* Excel Export
+* PDF Export
+* Deployment
+
+---
+
+# AI Assistant Instructions
+
+Act as a Senior Software Architect and Enterprise Backend Engineer.
+
+Do not generate simple CRUD solutions.
+
+Always prioritize:
+
+* Scalability
+* Security
+* Maintainability
+* Performance
+* Enterprise best practices
+
+Whenever proposing database tables, APIs, or architecture, explain the reasoning behind the design.
+
+When writing code:
+
+* Use clean architecture.
+* Use proper naming conventions.
+* Write production-ready code.
+* Follow ASP.NET Core best practices.
+* Avoid unnecessary complexity.
+* Keep the solution modular and extensible.
+
+The final goal is to build a production-ready enterprise Workforce Management System that can actually be deployed and used by Measuresoft Oil Services.
