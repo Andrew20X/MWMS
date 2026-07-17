@@ -23,3 +23,28 @@ Thumbs.db
 
 # Secrets
 appsettings.Development.json
+
+# Node modules
+node_modules/
+dist/
+dist-ssr/
+
+# Databases
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# Logs & Temporary untracked files
+restorelog.txt
+dotnet_run_out.txt
+dotnet_run_err.txt
+runlog.txt
+stderr.txt
+stdout.txt
+test.cs
+
+# Large untracked directories / files
+SubmittedTimesheets/
+TimeSheet/
+Timesheet_xls.xlsx

@@ -30,6 +30,15 @@ public class EmployeeRepository : GenericRepository<Employee>, IEmployeeReposito
             .FirstOrDefaultAsync(e => e.DeviceUserId == deviceUserId);
     }
 
+    public async Task<Employee?> GetByEmailAsync(string email)
+    {
+        return await _context.Employees
+            .Include(e => e.Department)
+            .Include(e => e.Position)
+            .Include(e => e.Shift)
+            .FirstOrDefaultAsync(e => e.Email == email);
+    }
+
     public override async Task<IEnumerable<Employee>> GetAllAsync()
     {
         return await _context.Employees
@@ -46,5 +55,28 @@ public class EmployeeRepository : GenericRepository<Employee>, IEmployeeReposito
             .Include(e => e.Position)
             .Include(e => e.Shift)
             .FirstOrDefaultAsync(e => e.Id == id);
+    }
+
+    public async Task<string?> ValidateReferencesAsync(int departmentId, int positionId, int shiftId)
+    {
+        if (departmentId <= 0)
+            return "DepartmentId must be a valid department id (e.g. 1).";
+
+        if (positionId <= 0)
+            return "PositionId must be a valid position id (e.g. 1).";
+
+        if (shiftId <= 0)
+            return "ShiftId must be a valid shift id (e.g. 1).";
+
+        if (!await _context.Departments.AnyAsync(d => d.Id == departmentId))
+            return $"Department with Id {departmentId} does not exist.";
+
+        if (!await _context.Positions.AnyAsync(p => p.Id == positionId))
+            return $"Position with Id {positionId} does not exist.";
+
+        if (!await _context.Shifts.AnyAsync(s => s.Id == shiftId))
+            return $"Shift with Id {shiftId} does not exist.";
+
+        return null;
     }
 }

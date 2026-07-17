@@ -7,8 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BiometricZktecoDeviceCommunication" Version="1.0.0" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.8" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
   </ItemGroup>
@@ -17,6 +25,13 @@
     <ProjectReference Include="..\MWMS.Application\MWMS.Application.csproj" />
     <ProjectReference Include="..\MWMS.Infrastructure\MWMS.Infrastructure.csproj" />
     <ProjectReference Include="..\MWMS.Persistence\MWMS.Persistence.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="TestApi/**/*.cs" />
+    <Content Remove="TestApi/**" />
+    <EmbeddedResource Remove="TestApi/**" />
+    <None Remove="TestApi/**" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,25 @@
+const ZKLib = require('node-zklib');
+const fs = require('fs');
+
+async function fetchLogs() {
+    const ip = process.argv[2] || '10.10.100.102';
+    const port = parseInt(process.argv[3]) || 4370;
+    const outputPath = process.argv[4] || 'zk_logs.json';
+    
+    let zkInstance = new ZKLib(ip, port, 10000, 4000);
+    try {
+        await zkInstance.createSocket();
+        
+        const attendances = await zkInstance.getAttendances();
+        
+        // Write to file
+        fs.writeFileSync(outputPath, JSON.stringify(attendances.data));
+        
+        await zkInstance.disconnect();
+    } catch (e) {
+        console.error("Error: " + e.message);
+        process.exit(1);
+    }
+}
+
+fetchLogs();

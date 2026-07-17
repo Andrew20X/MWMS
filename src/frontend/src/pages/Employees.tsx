@@ -1,0 +1,381 @@
+import { useState, useEffect } from 'react';
+import { Typography, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, InputAdornment } from '@mui/material';
+import { Plus, Trash2, Edit2, Key, Search, Calendar } from 'lucide-react';
+import axios from 'axios';
+
+interface Employee {
+  id: number;
+  employeeCode: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  departmentId: number;
+}
+
+export default function Employees() {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const defaultEmployeeState = {
+    employeeCode: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    deviceUserId: 0,
+    departmentId: 1,
+    positionId: 1,
+    shiftId: 1
+  };
+  const [newEmployee, setNewEmployee] = useState(defaultEmployeeState);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [employeeToReset, setEmployeeToReset] = useState<number | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<number | null>(null);
+
+  const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
+  const [balanceEmployee, setBalanceEmployee] = useState<Employee | null>(null);
+  const [leaveBalance, setLeaveBalance] = useState({ 
+    year: new Date().getFullYear(), 
+    annualLeaveTotal: 15, 
+    annualLeaveUsed: 0,
+    emergencyLeaveTotal: 6,
+    emergencyLeaveUsed: 0
+  });
+
+  const fetchEmployees = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get('http://localhost:5222/api/Employees');
+      setEmployees(response.data);
+    } catch (err: any) {
+      setError('Failed to load employees.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+
+  const showMessage = (message: string, severity: 'success' | 'error') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleOpenBalance = async (employee: Employee) => {
+    try {
+      setBalanceEmployee(employee);
+      const currentYear = new Date().getFullYear();
+      const response = await axios.get(`http://localhost:5222/api/Leaves/balance/${employee.id}?year=${currentYear}`);
+      setLeaveBalance({
+        year: currentYear,
+        annualLeaveTotal: response.data.annualLeaveTotal,
+        annualLeaveUsed: response.data.annualLeaveUsed,
+        emergencyLeaveTotal: response.data.emergencyLeaveTotal,
+        emergencyLeaveUsed: response.data.emergencyLeaveUsed
+      });
+      setBalanceDialogOpen(true);
+    } catch (err) {
+      showMessage('Failed to fetch leave balance.', 'error');
+    }
+  };
+
+  const handleSaveBalance = async () => {
+    if (!balanceEmployee) return;
+    try {
+      await axios.put(`http://localhost:5222/api/Leaves/balance/${balanceEmployee.id}`, leaveBalance);
+      showMessage('Leave balance updated successfully.', 'success');
+      setBalanceDialogOpen(false);
+    } catch (err) {
+      showMessage('Failed to update leave balance.', 'error');
+    }
+  };
+
+  const confirmDelete = (id: number) => {
+    setEmployeeToDelete(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (employeeToDelete === null) return;
+    try {
+      await axios.delete(`http://localhost:5222/api/Employees/${employeeToDelete}`);
+      showMessage('Employee deleted successfully', 'success');
+      fetchEmployees();
+    } catch (err) {
+      showMessage('Failed to delete employee. They might be tied to existing attendance records.', 'error');
+    } finally {
+      setDeleteConfirmOpen(false);
+      setEmployeeToDelete(null);
+    }
+  };
+
+  const confirmResetPassword = (id: number) => {
+    setEmployeeToReset(id);
+    setResetConfirmOpen(true);
+  };
+
+  const handleResetPassword = async () => {
+    if (employeeToReset === null) return;
+    try {
+      const emp = employees.find(e => e.id === employeeToReset);
+      const code = emp?.employeeCode || '';
+      const response = await axios.post(`http://localhost:5222/api/Auth/force-reset-password/${employeeToReset}`);
+      showMessage(response.data.message ? `Password reset successfully to EMP-SYNC-${code}` : `Password reset successfully to EMP-SYNC-${code}`, 'success');
+    } catch (err: any) {
+      showMessage(err.response?.data?.message || 'Failed to reset password', 'error');
+    } finally {
+      setResetConfirmOpen(false);
+      setEmployeeToReset(null);
+    }
+  };
+
+  const handleAddOrEdit = async () => {
+    try {
+      if (isEditing && editingId) {
+        await axios.put(`http://localhost:5222/api/Employees/${editingId}`, {
+          ...newEmployee,
+          isActive: true
+        });
+      } else {
+        await axios.post('http://localhost:5222/api/Employees', newEmployee);
+      }
+      setOpen(false);
+      showMessage('Employee saved successfully', 'success');
+      fetchEmployees();
+    } catch (err: any) {
+      showMessage(err.response?.data?.error || 'Failed to save employee', 'error');
+    }
+  };
+
+  const handleGenerateLogins = async () => {
+    try {
+      const response = await axios.post('http://localhost:5222/api/Auth/generate-logins');
+      showMessage(response.data.message || 'Logins generated successfully', 'success');
+    } catch (err: any) {
+      showMessage('Failed to generate logins', 'error');
+    }
+  };
+
+  const openAddDialog = () => {
+    setIsEditing(false);
+    setEditingId(null);
+    setNewEmployee(defaultEmployeeState);
+    setOpen(true);
+  };
+
+  const openEditDialog = (employee: Employee) => {
+    setIsEditing(true);
+    setEditingId(employee.id);
+    setNewEmployee({
+      ...defaultEmployeeState,
+      employeeCode: employee.employeeCode,
+      firstName: employee.firstName,
+      lastName: employee.lastName,
+      email: employee.email || ''
+    });
+    setOpen(true);
+  };
+
+  const filteredEmployees = employees.filter(emp => {
+    const q = searchQuery.toLowerCase();
+    return (
+      emp.firstName.toLowerCase().includes(q) ||
+      emp.lastName.toLowerCase().includes(q) ||
+      emp.employeeCode.toLowerCase().includes(q) ||
+      (emp.email && emp.email.toLowerCase().includes(q))
+    );
+  });
+
+  return (
+    <Box>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 3 }}>
+        <Typography variant="h4" sx={{ m: 0 }}>
+          Employee Directory
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+          <Button variant="outlined" onClick={handleGenerateLogins}>
+            Generate Logins
+          </Button>
+          <Button variant="contained" startIcon={<Plus size={18} />} onClick={openAddDialog}>
+            Add Employee
+          </Button>
+        </Box>
+      </Box>
+
+      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <DialogTitle>{isEditing ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
+        <DialogContent>
+          <TextField autoFocus margin="dense" label="Employee Code (e.g. EMP002)" fullWidth variant="outlined" value={newEmployee.employeeCode} disabled={isEditing} onChange={e => setNewEmployee({ ...newEmployee, employeeCode: e.target.value })} sx={{ mb: 2, mt: 1 }} />
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <TextField label="First Name" fullWidth variant="outlined" value={newEmployee.firstName} onChange={e => setNewEmployee({ ...newEmployee, firstName: e.target.value })} />
+            <TextField label="Last Name" fullWidth variant="outlined" value={newEmployee.lastName} onChange={e => setNewEmployee({ ...newEmployee, lastName: e.target.value })} />
+          </Box>
+          <TextField margin="dense" label="Email Address" type="email" fullWidth variant="outlined" value={newEmployee.email} onChange={e => setNewEmployee({ ...newEmployee, email: e.target.value })} sx={{ mb: 2 }} />
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={handleAddOrEdit} variant="contained">Save Employee</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Box sx={{ mb: 3 }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Search by name, code, or email..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search size={20} color="#94a3b8" />
+                </InputAdornment>
+              ),
+            }
+          }}
+          sx={{ bgcolor: 'white', borderRadius: 1 }}
+        />
+      </Box>
+
+      <TableContainer component={Paper} elevation={2}>
+        <Table sx={{ minWidth: 650 }} aria-label="employee table">
+          <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 'bold' }}>Code</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={4} align="center" sx={{ py: 5 }}>
+                  <CircularProgress />
+                </TableCell>
+              </TableRow>
+            ) : filteredEmployees.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} align="center" sx={{ py: 5 }}>
+                  <Typography color="text.secondary">No employees found.</Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredEmployees.map((row) => (
+                <TableRow
+                  key={row.id}
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                >
+                  <TableCell component="th" scope="row">{row.employeeCode.startsWith('no ID') ? 'no ID' : row.employeeCode}</TableCell>
+                  <TableCell>{row.firstName} {row.lastName}</TableCell>
+                  <TableCell>{row.email}</TableCell>
+                  <TableCell align="right">
+                    <Button color="success" size="small" onClick={() => handleOpenBalance(row)} title="Set Leave Balance" sx={{ minWidth: 32, mr: 1 }}>
+                      <Calendar size={16} />
+                    </Button>
+                    <Button color="secondary" size="small" onClick={() => confirmResetPassword(row.id)} title="Reset Password" sx={{ minWidth: 32, mr: 1 }}>
+                      <Key size={16} />
+                    </Button>
+                    <Button color="primary" size="small" onClick={() => openEditDialog(row)} sx={{ minWidth: 32, mr: 1 }}>
+                      <Edit2 size={16} />
+                    </Button>
+                    <Button color="error" size="small" onClick={() => confirmDelete(row.id)} sx={{ minWidth: 32 }}>
+                      <Trash2 size={16} />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      <Dialog open={resetConfirmOpen} onClose={() => setResetConfirmOpen(false)}>
+        <DialogTitle sx={{ fontWeight: 'bold' }}>Reset Password</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to reset this employee's password to EMP-SYNC-(Employee Code)?</Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setResetConfirmOpen(false)} color="inherit">Cancel</Button>
+          <Button onClick={handleResetPassword} variant="contained" color="secondary">Reset Password</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
+        <DialogTitle sx={{ fontWeight: 'bold', color: 'error.main' }}>Delete Employee</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete this employee? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setDeleteConfirmOpen(false)} color="inherit">Cancel</Button>
+          <Button onClick={handleDelete} variant="contained" color="error">Delete</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={balanceDialogOpen} onClose={() => setBalanceDialogOpen(false)}>
+        <DialogTitle sx={{ fontWeight: 'bold' }}>Leave Balance for {balanceEmployee?.firstName} {balanceEmployee?.lastName}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Annual Leave (RDO)</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Used: <strong>{leaveBalance.annualLeaveUsed}</strong> | Remaining: <strong>{leaveBalance.annualLeaveTotal - leaveBalance.annualLeaveUsed}</strong>
+              </Typography>
+              <TextField
+                label={`Total Annual Leave Days (${leaveBalance.year})`}
+                type="number"
+                fullWidth
+                variant="outlined"
+                value={leaveBalance.annualLeaveTotal}
+                onChange={e => setLeaveBalance({ ...leaveBalance, annualLeaveTotal: parseInt(e.target.value) || 0 })}
+                helperText="Increase this value to grant an exception."
+              />
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Emergency Leave (EDO)</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Used: <strong>{leaveBalance.emergencyLeaveUsed}</strong> | Remaining: <strong>{leaveBalance.emergencyLeaveTotal - leaveBalance.emergencyLeaveUsed}</strong>
+              </Typography>
+              <TextField
+                label={`Total Emergency Leave Days (${leaveBalance.year})`}
+                type="number"
+                fullWidth
+                variant="outlined"
+                value={leaveBalance.emergencyLeaveTotal}
+                onChange={e => setLeaveBalance({ ...leaveBalance, emergencyLeaveTotal: parseInt(e.target.value) || 0 })}
+                helperText="Increase this value to grant an exception."
+              />
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setBalanceDialogOpen(false)} color="inherit">Cancel</Button>
+          <Button onClick={handleSaveBalance} variant="contained" color="primary">Save Balance</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+}
