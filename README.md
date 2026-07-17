@@ -90,14 +90,8 @@ The backend utilizes Entity Framework Core Migrations to automatically build the
 
 Upon successful database initialization, the following default accounts are seeded for testing. Note: You will be forced to change your password upon your first login.
 
-| Role | Username | Temporary Password |
-| :--- | :--- | :--- |
-| **Admin** | `admin` | `Password123!` |
-| **Manager** | `manager` | `Password123!` |
-| **Employee** | `employee` | `Password123!` |
-
 ---
 
 <div align="center">
-  <i>Built with ❤️ using Clean Architecture and Modern Web Standards.</i>
+  <i>Built with love using Clean Architecture and Modern Web Standards.</i>
 </div>
