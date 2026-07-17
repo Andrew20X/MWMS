@@ -277,7 +277,9 @@ public class LeaveService : ILeaveService
         var balance = await _leaveBalanceRepository.GetOrCreateAsync(employeeId, year);
         
         balance.AnnualLeaveTotal = dto.AnnualLeaveTotal;
+        balance.AnnualLeaveUsed = dto.AnnualLeaveUsed;
         balance.EmergencyLeaveTotal = dto.EmergencyLeaveTotal;
+        balance.EmergencyLeaveUsed = dto.EmergencyLeaveUsed;
         balance.UpdatedAt = DateTime.UtcNow;
 
         _leaveBalanceRepository.Update(balance);

@@ -335,33 +335,51 @@ export default function Employees() {
             <Box>
               <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Annual Leave (RDO)</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Used: <strong>{leaveBalance.annualLeaveUsed}</strong> | Remaining: <strong>{leaveBalance.annualLeaveTotal - leaveBalance.annualLeaveUsed}</strong>
+                Remaining: <strong>{leaveBalance.annualLeaveTotal - leaveBalance.annualLeaveUsed}</strong>
               </Typography>
-              <TextField
-                label={`Total Annual Leave Days (${leaveBalance.year})`}
-                type="number"
-                fullWidth
-                variant="outlined"
-                value={leaveBalance.annualLeaveTotal}
-                onChange={e => setLeaveBalance({ ...leaveBalance, annualLeaveTotal: parseInt(e.target.value) || 0 })}
-                helperText="Increase this value to grant an exception."
-              />
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label={`Used (${leaveBalance.year})`}
+                  type="number"
+                  fullWidth
+                  variant="outlined"
+                  value={leaveBalance.annualLeaveUsed}
+                  onChange={e => setLeaveBalance({ ...leaveBalance, annualLeaveUsed: parseInt(e.target.value) || 0 })}
+                />
+                <TextField
+                  label={`Total Allowed (${leaveBalance.year})`}
+                  type="number"
+                  fullWidth
+                  variant="outlined"
+                  value={leaveBalance.annualLeaveTotal}
+                  onChange={e => setLeaveBalance({ ...leaveBalance, annualLeaveTotal: parseInt(e.target.value) || 0 })}
+                />
+              </Box>
             </Box>
 
             <Box>
               <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Emergency Leave (EDO)</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Used: <strong>{leaveBalance.emergencyLeaveUsed}</strong> | Remaining: <strong>{leaveBalance.emergencyLeaveTotal - leaveBalance.emergencyLeaveUsed}</strong>
+                Remaining: <strong>{leaveBalance.emergencyLeaveTotal - leaveBalance.emergencyLeaveUsed}</strong>
               </Typography>
-              <TextField
-                label={`Total Emergency Leave Days (${leaveBalance.year})`}
-                type="number"
-                fullWidth
-                variant="outlined"
-                value={leaveBalance.emergencyLeaveTotal}
-                onChange={e => setLeaveBalance({ ...leaveBalance, emergencyLeaveTotal: parseInt(e.target.value) || 0 })}
-                helperText="Increase this value to grant an exception."
-              />
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label={`Used (${leaveBalance.year})`}
+                  type="number"
+                  fullWidth
+                  variant="outlined"
+                  value={leaveBalance.emergencyLeaveUsed}
+                  onChange={e => setLeaveBalance({ ...leaveBalance, emergencyLeaveUsed: parseInt(e.target.value) || 0 })}
+                />
+                <TextField
+                  label={`Total Allowed (${leaveBalance.year})`}
+                  type="number"
+                  fullWidth
+                  variant="outlined"
+                  value={leaveBalance.emergencyLeaveTotal}
+                  onChange={e => setLeaveBalance({ ...leaveBalance, emergencyLeaveTotal: parseInt(e.target.value) || 0 })}
+                />
+              </Box>
             </Box>
           </Box>
         </DialogContent>
