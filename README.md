@@ -86,15 +86,7 @@ The backend utilizes Entity Framework Core Migrations to automatically build the
 
 ---
 
-## 🔑 Default Sandbox Accounts
 
-Upon successful database initialization, the following default accounts are seeded for testing. Note: You will be forced to change your password upon your first login.
-
-| Role | Username | Temporary Password |
-| :--- | :--- | :--- |
-| **Admin** | `admin` | `Password123!` |
-| **Manager** | `manager` | `Password123!` |
-| **Employee** | `employee` | `Password123!` |
 
 ---
 
