@@ -303,7 +303,7 @@ export default function Timesheets() {
             <Typography variant="h4" sx={{ m: 0, fontWeight: 'normal', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
               Recent Raw Timesheets
             </Typography>
-        <Box sx={{ display: 'flex', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', sm: 'auto' } }}>
           <Button variant="outlined" color="error" startIcon={<Trash size={18} />} onClick={() => setOpenClearRaw(true)}>
             Clear Data
           </Button>
@@ -376,7 +376,7 @@ export default function Timesheets() {
           <Typography variant="h4" sx={{ fontWeight: 'normal', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
             Submitted Final Timesheets
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', sm: 'auto' } }}>
             <Button variant="outlined" startIcon={<Download size={18} />} onClick={handleDownloadAllSubmitted}>
               Download All
             </Button>

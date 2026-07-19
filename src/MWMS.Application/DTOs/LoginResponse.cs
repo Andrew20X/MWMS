@@ -13,4 +13,6 @@ public class LoginResponse
     public string FullName { get; set; } = string.Empty;
     
     public bool RequiresPasswordChange { get; set; }
+
+    public string PositionName { get; set; } = string.Empty;
 }

@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ILeaveService, LeaveService>();
+        services.AddScoped<IPositionService, PositionService>();
         return services;
     }
 }

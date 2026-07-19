@@ -60,6 +60,7 @@ public class AuthService : IAuthService
             Username = user.Username,
             FullName = employee != null ? $"{employee.FirstName} {employee.LastName}".Trim() : user.FullName,
             Role = user.Role,
+            PositionName = employee?.Position?.Name ?? user.Role,
             EmployeeId = employee?.Id,
             RequiresPasswordChange = _passwordHasher.Verify(user.Username, user.PasswordHash)
         };

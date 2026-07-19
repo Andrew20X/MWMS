@@ -26,9 +26,9 @@ export default function Login() {
         password
       });
 
-      const { token, username: resUsername, fullName, role, employeeId, requiresPasswordChange } = response.data;
+      const { token, username: resUsername, fullName, role, employeeId, requiresPasswordChange, positionName } = response.data;
       
-      login({ token, username: resUsername, fullName, role, employeeId, requiresPasswordChange });
+      login({ token, username: resUsername, fullName, role, employeeId, requiresPasswordChange, positionName });
       
       if (requiresPasswordChange) {
         navigate('/force-change-password');

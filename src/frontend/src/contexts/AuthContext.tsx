@@ -6,6 +6,7 @@ interface User {
   username: string;
   fullName?: string;
   role: 'Admin' | 'Manager' | 'Employee';
+  positionName?: string;
   token: string;
   employeeId?: number;
   requiresPasswordChange?: boolean;

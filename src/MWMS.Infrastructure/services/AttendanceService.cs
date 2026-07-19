@@ -213,7 +213,7 @@ public class AttendanceService : IAttendanceService
         var overtimes = await _overtimeRepository.GetByEmployeeAsync(employeeId);
         var periodOvertimes = overtimes.Where(o => o.Status == "Approved").GroupBy(o => o.Date).ToDictionary(g => g.Key, g => g.ToList());
 
-        return attendances.Select(a => new AttendanceResponseDto
+        var result = attendances.Select(a => new AttendanceResponseDto
         {
             EmployeeId = a.EmployeeId,
             EmployeeCode = a.Employee.EmployeeCode,
@@ -227,7 +227,37 @@ public class AttendanceService : IAttendanceService
             EarlyLeaveMinutes = a.EarlyLeaveMinutes,
             OvertimeMinutes = a.OvertimeMinutes,
             OvertimeType = periodOvertimes.TryGetValue(a.Date, out var ots) && ots.Any() ? ots.First().Type : null
-        });
+        }).ToList();
+
+        var employee = await _employeeRepository.GetByIdAsync(employeeId);
+        if (employee != null)
+        {
+            foreach (var otGroup in periodOvertimes)
+            {
+                if (!attendances.Any(a => a.Date == otGroup.Key))
+                {
+                    var ot = otGroup.Value.First();
+                    var otSpan = ot.EndTime.ToTimeSpan() - ot.StartTime.ToTimeSpan();
+                    if (otSpan.TotalMinutes < 0) otSpan = otSpan.Add(TimeSpan.FromHours(24));
+                    
+                    result.Add(new AttendanceResponseDto
+                    {
+                        EmployeeId = employee.Id,
+                        EmployeeCode = employee.EmployeeCode,
+                        EmployeeName = $"{employee.FirstName} {employee.LastName}",
+                        Date = ot.Date,
+                        CheckIn = ot.StartTime,
+                        CheckOut = ot.EndTime,
+                        Status = "Overtime",
+                        WorkedHours = otSpan.TotalHours,
+                        OvertimeMinutes = (int)otSpan.TotalMinutes,
+                        OvertimeType = ot.Type
+                    });
+                }
+            }
+        }
+
+        return result.OrderByDescending(r => r.Date);
     }
 
     public async Task<int> ImportTimesheetAsync(Stream excelStream, int? expectedEmployeeId = null)

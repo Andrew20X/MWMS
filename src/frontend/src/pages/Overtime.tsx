@@ -120,7 +120,7 @@ export default function Overtime() {
             Delete All
           </Button>
           {!canApprove && (
-            <Button variant="contained" color="secondary" startIcon={<Plus size={18} />} onClick={() => setOpen(true)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+            <Button variant="contained" startIcon={<Plus size={18} />} onClick={() => setOpen(true)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
               Request Overtime
             </Button>
           )}

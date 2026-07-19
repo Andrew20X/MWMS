@@ -19,6 +19,7 @@ const formatOvertimeMinutes = (minutes: number): string => {
 export default function MyTimesheet() {
   const { user } = useAuth();
   const [attendance, setAttendance] = useState<any[]>([]);
+  const [sortAscending, setSortAscending] = useState(true);
   const [loading, setLoading] = useState(true);
   const [openExport, setOpenExport] = useState(false);
   const [openFetch, setOpenFetch] = useState(false);
@@ -227,7 +228,12 @@ export default function MyTimesheet() {
               <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 'normal' }}>Employee ID</TableCell>
-                  <TableCell sx={{ fontWeight: 'normal' }}>Date</TableCell>
+                  <TableCell 
+                    sx={{ fontWeight: 'normal', cursor: 'pointer', userSelect: 'none' }}
+                    onClick={() => setSortAscending(!sortAscending)}
+                  >
+                    Date {sortAscending ? '↑' : '↓'}
+                  </TableCell>
                   <TableCell sx={{ fontWeight: 'normal' }}>Check In</TableCell>
                   <TableCell sx={{ fontWeight: 'normal' }}>Check Out</TableCell>
                   <TableCell sx={{ fontWeight: 'normal' }}>Status</TableCell>
@@ -236,7 +242,11 @@ export default function MyTimesheet() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {attendance.map((row, index) => (
+                {[...attendance].sort((a, b) => {
+                  const dateA = new Date(a.date).getTime();
+                  const dateB = new Date(b.date).getTime();
+                  return sortAscending ? dateA - dateB : dateB - dateA;
+                }).map((row, index) => (
                   <TableRow key={index}>
                     <TableCell>{row.employeeCode}</TableCell>
                     <TableCell>{new Date(row.date).toLocaleDateString()}</TableCell>

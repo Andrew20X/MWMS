@@ -10,14 +10,18 @@ interface Employee {
   lastName: string;
   email: string;
   departmentId: number;
+  positionId: number;
+  position?: { id: number; name: string };
 }
 
 export default function Employees() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [positionInput, setPositionInput] = useState('');
   const defaultEmployeeState = {
     employeeCode: '',
     firstName: '',
@@ -144,17 +148,23 @@ export default function Employees() {
 
   const handleAddOrEdit = async () => {
     try {
+      let currentPosId = newEmployee.positionId;
+      if (positionInput.trim()) {
+        const posRes = await axios.post('http://localhost:5222/api/Positions/get-or-create', { name: positionInput.trim() });
+        currentPosId = posRes.data.id;
+      }
+      
+      const payload = { ...newEmployee, positionId: currentPosId, isActive: true };
+
       if (isEditing && editingId) {
-        await axios.put(`http://localhost:5222/api/Employees/${editingId}`, {
-          ...newEmployee,
-          isActive: true
-        });
+        await axios.put(`http://localhost:5222/api/Employees/${editingId}`, payload);
       } else {
-        await axios.post('http://localhost:5222/api/Employees', newEmployee);
+        await axios.post('http://localhost:5222/api/Employees', payload);
       }
       setOpen(false);
       showMessage('Employee saved successfully', 'success');
       fetchEmployees();
+
     } catch (err: any) {
       showMessage(err.response?.data?.error || 'Failed to save employee', 'error');
     }
@@ -173,6 +183,7 @@ export default function Employees() {
     setIsEditing(false);
     setEditingId(null);
     setNewEmployee(defaultEmployeeState);
+    setPositionInput('');
     setOpen(true);
   };
 
@@ -184,8 +195,10 @@ export default function Employees() {
       employeeCode: employee.employeeCode,
       firstName: employee.firstName,
       lastName: employee.lastName,
-      email: employee.email || ''
+      email: employee.email || '',
+      positionId: employee.positionId || 1
     });
+    setPositionInput(employee.position?.name || '');
     setOpen(true);
   };
 
@@ -226,6 +239,15 @@ export default function Employees() {
             <TextField label="Last Name" fullWidth variant="outlined" value={newEmployee.lastName} onChange={e => setNewEmployee({ ...newEmployee, lastName: e.target.value })} />
           </Box>
           <TextField margin="dense" label="Email Address" type="email" fullWidth variant="outlined" value={newEmployee.email} onChange={e => setNewEmployee({ ...newEmployee, email: e.target.value })} sx={{ mb: 2 }} />
+          <TextField
+            margin="dense"
+            label="Job Position"
+            fullWidth
+            variant="outlined"
+            value={positionInput}
+            onChange={e => setPositionInput(e.target.value)}
+            sx={{ mb: 2 }}
+          />
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
@@ -260,19 +282,20 @@ export default function Employees() {
               <TableCell sx={{ fontWeight: 'normal' }}>Code</TableCell>
               <TableCell sx={{ fontWeight: 'normal' }}>Name</TableCell>
               <TableCell sx={{ fontWeight: 'normal' }}>Email</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Position</TableCell>
               <TableCell align="right" sx={{ fontWeight: 'normal' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ py: 5 }}>
+                <TableCell colSpan={5} align="center" sx={{ py: 5 }}>
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : filteredEmployees.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} align="center" sx={{ py: 5 }}>
+                <TableCell colSpan={5} align="center" sx={{ py: 5 }}>
                   <Typography color="text.secondary">No employees found.</Typography>
                 </TableCell>
               </TableRow>
@@ -285,19 +308,22 @@ export default function Employees() {
                   <TableCell component="th" scope="row">{row.employeeCode.startsWith('no ID') ? 'no ID' : row.employeeCode}</TableCell>
                   <TableCell>{row.firstName} {row.lastName}</TableCell>
                   <TableCell>{row.email}</TableCell>
+                  <TableCell>{row.position?.name || 'N/A'}</TableCell>
                   <TableCell align="right">
-                    <Button color="success" size="small" onClick={() => handleOpenBalance(row)} title="Set Leave Balance" sx={{ minWidth: 32, mr: 1 }}>
-                      <Calendar size={16} />
-                    </Button>
-                    <Button color="secondary" size="small" onClick={() => confirmResetPassword(row.id)} title="Reset Password" sx={{ minWidth: 32, mr: 1 }}>
-                      <Key size={16} />
-                    </Button>
-                    <Button color="primary" size="small" onClick={() => openEditDialog(row)} sx={{ minWidth: 32, mr: 1 }}>
-                      <Edit2 size={16} />
-                    </Button>
-                    <Button color="error" size="small" onClick={() => confirmDelete(row.id)} sx={{ minWidth: 32 }}>
-                      <Trash2 size={16} />
-                    </Button>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'nowrap', gap: 1 }}>
+                      <Button color="success" size="small" onClick={() => handleOpenBalance(row)} title="Set Leave Balance" sx={{ minWidth: 32 }}>
+                        <Calendar size={16} />
+                      </Button>
+                      <Button color="secondary" size="small" onClick={() => confirmResetPassword(row.id)} title="Reset Password" sx={{ minWidth: 32 }}>
+                        <Key size={16} />
+                      </Button>
+                      <Button color="primary" size="small" onClick={() => openEditDialog(row)} title="Edit Employee" sx={{ minWidth: 32 }}>
+                        <Edit2 size={16} />
+                      </Button>
+                      <Button color="error" size="small" onClick={() => confirmDelete(row.id)} title="Delete Employee" sx={{ minWidth: 32 }}>
+                        <Trash2 size={16} />
+                      </Button>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))

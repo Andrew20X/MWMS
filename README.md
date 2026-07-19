@@ -21,6 +21,7 @@ The system provides a robust administrative dashboard alongside dedicated portal
 
 - 🔐 **Secure Role-Based Authentication:** JWT-based session management isolating `Admin`, `Manager`, and `Employee` access.
 - 👥 **Employee Directory & Configuration:** Admins can manage staff profiles, reset passwords, and set precise **Annual & Emergency Leave Balances**.
+- 🏢 **Job Positions Management:** Comprehensive CRUD operations for organizational positions, accurately mapping titles across the workforce dashboard.
 - 📆 **Advanced Leave & Time Off:** Employees can submit RDO/EDO requests. Managers and Admins can approve, reject, and leave feedback.
 - 🕒 **Overtime & Corrections Tracking:** Digitized request systems for missed punches and logged overtime.
 - 📊 **Real-Time Dashboards & Analytics:** "My Insights" portal provides real-time statistics on leave utilization, attendance trends, and pending tasks.
