@@ -52,6 +52,13 @@ const LEAVE_TYPES = [
   { value: 2, label: 'Emergency Leave (EDO)' },
   { value: 3, label: 'Reported Sick Day (RSD)' },
   { value: 4, label: 'Absence Without Permission (AWD)' },
+  { value: 5, label: 'Office Day (OD)' },
+  { value: 6, label: 'Official Holiday (OH)' },
+  { value: 7, label: 'Arrival Day (Arv)' },
+  { value: 8, label: 'Factory Day (FD)' },
+  { value: 9, label: 'Week End (WE)' },
+  { value: 10, label: 'Work Week End (WWE)' },
+  { value: 11, label: 'Egypt Field Day (EF)' },
 ];
 
 // ─── Status helpers ───────────────────────────────────────────────────────────
@@ -257,7 +264,7 @@ export default function Leaves() {
     <Box>
       {/* Header */}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 3 }}>
-        <Typography variant="h4" sx={{ m: 0, fontWeight: 'bold', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
+        <Typography variant="h4" sx={{ m: 0, fontWeight: 'normal', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
           Leaves & Permissions
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
@@ -278,11 +285,11 @@ export default function Leaves() {
       {!isAdmin && balance && (
         <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
           <Paper elevation={2} sx={{ p: 2.5, borderRadius: 3, flex: '1 1 200px', borderLeft: '4px solid #2563EB' }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 400, textTransform: 'uppercase', letterSpacing: 0.5 }}>
               Annual Leave (RDO)
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mt: 0.5 }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#2563EB' }}>
+              <Typography variant="h4" sx={{ fontWeight: 400, color: '#2563EB' }}>
                 {balance.annualLeaveRemaining}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -294,11 +301,11 @@ export default function Leaves() {
             </Box>
           </Paper>
           <Paper elevation={2} sx={{ p: 2.5, borderRadius: 3, flex: '1 1 200px', borderLeft: '4px solid #D97706' }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 400, textTransform: 'uppercase', letterSpacing: 0.5 }}>
               Emergency Leave (EDO)
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mt: 0.5 }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#D97706' }}>
+              <Typography variant="h4" sx={{ fontWeight: 400, color: '#D97706' }}>
                 {balance.emergencyLeaveRemaining}
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -363,13 +370,13 @@ export default function Leaves() {
         <Table sx={{ minWidth: 650 }}>
           <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>Employee</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Type</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Duration</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Reason</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Note</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Employee</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Type</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Duration</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Reason</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Note</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Status</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'normal' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -456,7 +463,7 @@ export default function Leaves() {
 
       {/* Approval History Dialog */}
       <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 'bold' }}>Approval History</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'normal' }}>Approval History</DialogTitle>
         <DialogContent>
           {historyLoading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}><CircularProgress /></Box>
@@ -467,7 +474,7 @@ export default function Leaves() {
               {historyData.map((h) => (
                 <Paper key={h.id} elevation={1} sx={{ p: 2, borderRadius: 2, borderLeft: `4px solid ${h.decision.includes('Rejected') ? '#EF4444' : '#22C55E'}` }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{h.approverName} ({h.approverRole})</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 400 }}>{h.approverName} ({h.approverRole})</Typography>
                     <Chip label={h.decision} size="small" color={h.decision.includes('Rejected') ? 'error' : 'success'} />
                   </Box>
                   <Typography variant="caption" color="text.secondary">
@@ -488,7 +495,7 @@ export default function Leaves() {
 
       {/* Delete Confirm Dialog */}
       <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ ...deleteDialog, open: false })} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 'bold', color: 'error.main' }}>Confirm Deletion</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'normal', color: 'error.main' }}>Confirm Deletion</DialogTitle>
         <DialogContent>
           <Typography variant="body1" sx={{ mt: 1 }}>
             {deleteDialog.action === 'deleteAll'

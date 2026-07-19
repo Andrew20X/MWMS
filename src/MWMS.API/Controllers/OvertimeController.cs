@@ -82,7 +82,7 @@ public class OvertimeController : ControllerBase
         var callerName = User.FindFirst("FullName")?.Value
                       ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
                       ?? "Unknown";
-        var callerIdClaim = User.FindFirst("UserId")?.Value ?? "0";
+        var callerIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0";
         int callerId = int.TryParse(callerIdClaim, out var cid) ? cid : 0;
 
         string decision;
@@ -128,10 +128,10 @@ public class OvertimeController : ControllerBase
         if (employee != null && !string.IsNullOrEmpty(employee.Email))
         {
             var isFullyApproved = request.Status == OvertimeRequest.StatusApproved;
-            var subject = isFullyApproved ? "Overtime (WFH) Approved" : "Overtime (WFH) – Manager Approved (Pending HR)";
+            var subject = isFullyApproved ? "Overtime Approved" : "Overtime – Manager Approved (Pending HR)";
             var body = isFullyApproved
-                ? $"Hello {employee.FirstName},\n\nYour Overtime (WFH) request for {request.Date:yyyy-MM-dd} from {request.StartTime} to {request.EndTime} has been fully approved.\nNote: {adminNote ?? "None"}"
-                : $"Hello {employee.FirstName},\n\nYour Overtime (WFH) request for {request.Date:yyyy-MM-dd} has been approved by your Manager and is now pending HR final approval.\nNote: {adminNote ?? "None"}";
+                ? $"Hello {employee.FirstName},\n\nYour Overtime request for {request.Date:yyyy-MM-dd} from {request.StartTime} to {request.EndTime} has been fully approved.\nNote: {adminNote ?? "None"}"
+                : $"Hello {employee.FirstName},\n\nYour Overtime request for {request.Date:yyyy-MM-dd} has been approved by your Manager and is now pending HR final approval.\nNote: {adminNote ?? "None"}";
 
             _ = Task.Run(async () =>
             {
@@ -154,7 +154,7 @@ public class OvertimeController : ControllerBase
         var callerName = User.FindFirst("FullName")?.Value
                       ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
                       ?? "Unknown";
-        var callerIdClaim = User.FindFirst("UserId")?.Value ?? "0";
+        var callerIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0";
         int callerId = int.TryParse(callerIdClaim, out var cid) ? cid : 0;
 
         // Validate stage access
@@ -190,8 +190,8 @@ public class OvertimeController : ControllerBase
         var employee = await _employeeRepository.GetByIdAsync(request.EmployeeId);
         if (employee != null && !string.IsNullOrEmpty(employee.Email))
         {
-            var subject = "Overtime (WFH) Rejected";
-            var body = $"Hello {employee.FirstName},\n\nYour Overtime (WFH) request for {request.Date:yyyy-MM-dd} from {request.StartTime} to {request.EndTime} has been rejected by {callerRole}.\nNote: {adminNote ?? "None"}";
+            var subject = "Overtime Rejected";
+            var body = $"Hello {employee.FirstName},\n\nYour Overtime request for {request.Date:yyyy-MM-dd} from {request.StartTime} to {request.EndTime} has been rejected by {callerRole}.\nNote: {adminNote ?? "None"}";
             _ = Task.Run(async () =>
             {
                 try { await _emailService.SendEmailAsync(employee.Email!, subject, body); } catch { }

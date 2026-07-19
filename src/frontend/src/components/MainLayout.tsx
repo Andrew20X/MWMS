@@ -93,7 +93,7 @@ export default function MainLayout() {
           <ListItem disablePadding>
             <ListItemButton component={Link} to="/overtime" onClick={() => setMobileOpen(false)}>
               <ListItemIcon><Home color="#48657B" /></ListItemIcon>
-              <ListItemText primary="Overtime (WFH)" />
+              <ListItemText primary="Overtime" />
             </ListItemButton>
           </ListItem>
 
@@ -125,7 +125,7 @@ export default function MainLayout() {
             <img src="/logo.png" alt="Measuresoft Logo" style={{ height: '45px', objectFit: 'contain' }} />
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
-            <Typography variant="body2" sx={{ fontWeight: 'bold', display: { xs: 'none', sm: 'block' }, color: 'text.primary' }}>{user?.fullName || user?.username} ({user?.role})</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 'normal', display: { xs: 'none', sm: 'block' }, color: 'text.primary' }}>{user?.fullName || user?.username} ({user?.role})</Typography>
             
             <Button color="primary" variant="outlined" size="small" startIcon={<KeyRound size={16} />} onClick={() => setPasswordModalOpen(true)} sx={{ minWidth: { xs: 'auto', sm: '150px' }, p: { xs: '6px', sm: '5px 15px' } }}>
               <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Change Password</Box>

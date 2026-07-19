@@ -46,7 +46,7 @@ export default function ForgotPassword() {
           <Box sx={{ mx: 'auto', width: 60, height: 60, borderRadius: '50%', bgcolor: 'rgba(46, 125, 50, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
             <Mail size={32} color="#2E7D32" />
           </Box>
-          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>Forgot Password</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 'normal' }}>Forgot Password</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             Enter your username and email address and we'll send you a link to reset your password.
           </Typography>
@@ -95,7 +95,7 @@ export default function ForgotPassword() {
             sx={{ 
               py: 1.5, 
               fontSize: '1rem', 
-              fontWeight: 600,
+              fontWeight: 400,
               textTransform: 'none',
               borderRadius: '8px',
               mb: 3,

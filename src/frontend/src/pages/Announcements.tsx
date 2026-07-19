@@ -110,7 +110,7 @@ export default function Announcements() {
   return (
     <Box>
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1E293B', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
+        <Typography variant="h4" sx={{ fontWeight: 'normal', color: '#1E293B', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
           Manage Announcements
         </Typography>
         <Button variant="contained" color="primary" startIcon={<Plus />} onClick={() => setOpen(true)} sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}>
@@ -135,14 +135,14 @@ export default function Announcements() {
                       sx={{
                         bgcolor: ann.type === 'Holiday' ? '#F0FDF4' : '#EFF6FF',
                         color: ann.type === 'Holiday' ? '#16A34A' : '#2563EB',
-                        fontWeight: 600, height: 24, fontSize: '0.75rem'
+                        fontWeight: 400, height: 24, fontSize: '0.75rem'
                       }}
                     />
                     <IconButton color="error" size="small" onClick={() => { setAnnouncementToDelete(ann.id); setDeleteConfirmOpen(true); }}>
                       <Trash2 size={18} />
                     </IconButton>
                   </Box>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>{ann.title}</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 'normal', mb: 1 }}>{ann.title}</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
                     {ann.content}
                   </Typography>
@@ -158,7 +158,7 @@ export default function Announcements() {
 
       {/* Create Announcement Dialog */}
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 'bold' }}>Post New Announcement</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'normal' }}>Post New Announcement</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth label="Title" margin="normal"
@@ -193,7 +193,7 @@ export default function Announcements() {
                   color="primary"
                 />
               }
-              label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Send to all employees</Typography>}
+              label={<Typography variant="body2" sx={{ fontWeight: 400 }}>Send to all employees</Typography>}
             />
 
             {!sendToAll && (
@@ -235,7 +235,7 @@ export default function Announcements() {
 
       {/* Delete Confirm Dialog */}
       <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle sx={{ fontWeight: 'bold', color: 'error.main' }}>Confirm Deletion</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'normal', color: 'error.main' }}>Confirm Deletion</DialogTitle>
         <DialogContent>
           <Typography>Are you sure you want to delete this announcement? This action cannot be undone.</Typography>
         </DialogContent>

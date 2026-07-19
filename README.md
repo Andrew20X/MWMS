@@ -1,6 +1,6 @@
 <div align="center">
   <h1>🌟 Measuresoft Workforce Management System (MWMS) 🌟</h1>
-  <p><strong>An Enterprise-Grade Attendance and Workforce Management Solution</strong></p>
+  <p><span>An Enterprise-Grade Attendance and Workforce Management Solution</span></p>
 
   [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
   [![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)

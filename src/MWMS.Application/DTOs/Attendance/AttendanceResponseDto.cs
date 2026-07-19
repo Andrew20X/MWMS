@@ -23,4 +23,6 @@ public class AttendanceResponseDto
     public int EarlyLeaveMinutes { get; set; }
 
     public int OvertimeMinutes { get; set; }
+
+    public string? OvertimeType { get; set; }
 }

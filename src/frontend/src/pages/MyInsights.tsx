@@ -108,7 +108,7 @@ export default function MyInsights() {
 
   return (
     <Box sx={{ maxWidth: '1200px', margin: '0 auto', pb: 8 }}>
-      <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1E293B', mb: 1 }}>
+      <Typography variant="h4" sx={{ fontWeight: 'normal', color: '#1E293B', mb: 1 }}>
         My Insights
       </Typography>
       <Typography variant="body1" sx={{ color: '#64748B', mb: 4 }}>
@@ -117,7 +117,7 @@ export default function MyInsights() {
 
       {totalLateMinutes > 120 && (
         <Alert severity="warning" icon={<AlertTriangle />} sx={{ mb: 4, borderRadius: 2 }}>
-          <strong>Warning:</strong> You have accumulated {totalLateMinutes} minutes of lateness this month. Please try to arrive on time to avoid deductions.
+          <span>Warning:</span> You have accumulated {totalLateMinutes} minutes of lateness this month. Please try to arrive on time to avoid deductions.
         </Alert>
       )}
 
@@ -131,10 +131,10 @@ export default function MyInsights() {
                   <Clock color="#4F46E5" size={24} />
                 </Box>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#1E293B', mb: 0.5 }}>
+              <Typography variant="h4" sx={{ fontWeight: 400, color: '#1E293B', mb: 0.5 }}>
                 {totalWorkedHours} <Typography component="span" variant="h6" color="text.secondary">hrs</Typography>
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 400 }}>
                 Total Worked Hours
               </Typography>
             </CardContent>
@@ -150,10 +150,10 @@ export default function MyInsights() {
                   <Target color="#10B981" size={24} />
                 </Box>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#1E293B', mb: 0.5 }}>
+              <Typography variant="h4" sx={{ fontWeight: 400, color: '#1E293B', mb: 0.5 }}>
                 {targetHours} <Typography component="span" variant="h6" color="text.secondary">hrs</Typography>
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 400 }}>
                 Target Hours
               </Typography>
             </CardContent>
@@ -169,10 +169,10 @@ export default function MyInsights() {
                   <AlertTriangle color="#F59E0B" size={24} />
                 </Box>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#1E293B', mb: 0.5 }}>
+              <Typography variant="h4" sx={{ fontWeight: 400, color: '#1E293B', mb: 0.5 }}>
                 {totalLateMinutes} <Typography component="span" variant="h6" color="text.secondary">min</Typography>
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 400 }}>
                 Total Late Time
               </Typography>
             </CardContent>
@@ -188,10 +188,10 @@ export default function MyInsights() {
                   <TrendingUp color="#0EA5E9" size={24} />
                 </Box>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, color: '#1E293B', mb: 0.5 }}>
+              <Typography variant="h4" sx={{ fontWeight: 400, color: '#1E293B', mb: 0.5 }}>
                 {Math.floor(totalOvertimeMinutes / 60)}<Typography component="span" variant="subtitle1" color="text.secondary">h</Typography> {totalOvertimeMinutes % 60}<Typography component="span" variant="subtitle1" color="text.secondary">m</Typography>
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 400 }}>
                 Total Overtime
               </Typography>
             </CardContent>
@@ -202,10 +202,10 @@ export default function MyInsights() {
       {/* Progress Bar */}
       <Paper sx={{ p: 4, borderRadius: 4, mb: 4, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E293B' }}>
+          <Typography variant="h6" sx={{ fontWeight: 400, color: '#1E293B' }}>
             Monthly Progress
           </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: '#4F46E5' }}>
+          <Typography variant="h6" sx={{ fontWeight: 400, color: '#4F46E5' }}>
             {progressPercentage}%
           </Typography>
         </Box>
@@ -224,7 +224,7 @@ export default function MyInsights() {
 
       {/* Chart */}
       <Paper sx={{ p: 4, borderRadius: 4, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1E293B', mb: 4 }}>
+        <Typography variant="h6" sx={{ fontWeight: 400, color: '#1E293B', mb: 4 }}>
           Daily Hours Worked
         </Typography>
         <Box sx={{ height: 300, width: '100%' }}>

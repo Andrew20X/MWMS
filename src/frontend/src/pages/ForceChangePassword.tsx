@@ -64,7 +64,7 @@ export default function ForceChangePassword() {
           <Box sx={{ mx: 'auto', width: 60, height: 60, borderRadius: '50%', bgcolor: 'rgba(245, 158, 11, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
             <Lock size={32} color="#F59E0B" />
           </Box>
-          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>Password Change Required</Typography>
+          <Typography variant="h5" sx={{ fontWeight: 'normal' }}>Password Change Required</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             For security reasons, you must change your password before continuing to the dashboard.
           </Typography>
@@ -161,7 +161,7 @@ export default function ForceChangePassword() {
             sx={{ 
               py: 1.5, 
               fontSize: '1rem', 
-              fontWeight: 600,
+              fontWeight: 400,
               textTransform: 'none',
               borderRadius: '8px',
               boxShadow: '0 4px 14px 0 rgba(46, 125, 50, 0.39)'

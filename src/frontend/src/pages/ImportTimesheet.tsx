@@ -300,7 +300,7 @@ export default function Timesheets() {
       {tab === 0 && (
         <>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 3 }}>
-            <Typography variant="h4" sx={{ m: 0, fontWeight: 'bold', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
+            <Typography variant="h4" sx={{ m: 0, fontWeight: 'normal', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
               Recent Raw Timesheets
             </Typography>
         <Box sx={{ display: 'flex', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
@@ -323,14 +323,14 @@ export default function Timesheets() {
         <Table sx={{ minWidth: 650 }}>
           <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>Employee</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold' }}>Late</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold' }}>Early</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold' }}>Overtime</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Employee</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Date</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Check In</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Check Out</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Status</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'normal' }}>Late</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'normal' }}>Early</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'normal' }}>Overtime</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -353,13 +353,13 @@ export default function Timesheets() {
                     />
                   </TableCell>
                   <TableCell align="right">
-                    {row.lateMinutes > 0 ? <Typography color="warning.main" sx={{ fontWeight: 'bold', fontSize: '0.875rem' }}>{formatMinutes(row.lateMinutes)}</Typography> : '-'}
+                    {row.lateMinutes > 0 ? <Typography color="warning.main" sx={{ fontWeight: 'normal', fontSize: '0.875rem' }}>{formatMinutes(row.lateMinutes)}</Typography> : '-'}
                   </TableCell>
                   <TableCell align="right">
-                    {row.earlyLeaveMinutes > 0 ? <Typography color="error.main" sx={{ fontWeight: 'bold', fontSize: '0.875rem' }}>{formatMinutes(row.earlyLeaveMinutes)}</Typography> : '-'}
+                    {row.earlyLeaveMinutes > 0 ? <Typography color="error.main" sx={{ fontWeight: 'normal', fontSize: '0.875rem' }}>{formatMinutes(row.earlyLeaveMinutes)}</Typography> : '-'}
                   </TableCell>
                   <TableCell align="right">
-                    {row.overtimeMinutes > 0 ? <Typography color="success.main" sx={{ fontWeight: 'bold', fontSize: '0.875rem' }}>{formatMinutes(row.overtimeMinutes)}</Typography> : '-'}
+                    {row.overtimeMinutes > 0 ? <Typography color="success.main" sx={{ fontWeight: 'normal', fontSize: '0.875rem' }}>{formatMinutes(row.overtimeMinutes)}</Typography> : '-'}
                   </TableCell>
                 </TableRow>
               ))
@@ -373,7 +373,7 @@ export default function Timesheets() {
       {tab === 1 && (
         <Box>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4" sx={{ fontWeight: 'bold', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
+          <Typography variant="h4" sx={{ fontWeight: 'normal', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
             Submitted Final Timesheets
           </Typography>
           <Box sx={{ display: 'flex', gap: 2 }}>
@@ -398,10 +398,10 @@ export default function Timesheets() {
                       onChange={handleSelectAll}
                     />
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Employee Name</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Submission Date</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>File Size</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>Action</TableCell>
+                  <TableCell sx={{ fontWeight: 'normal' }}>Employee Name</TableCell>
+                  <TableCell sx={{ fontWeight: 'normal' }}>Submission Date</TableCell>
+                  <TableCell sx={{ fontWeight: 'normal' }}>File Size</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 'normal' }}>Action</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -501,7 +501,7 @@ export default function Timesheets() {
       </Dialog>
 
       <Dialog open={openDelete} onClose={() => setOpenDelete(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ color: 'error.main', fontWeight: 'bold' }}>Delete Timesheet</DialogTitle>
+        <DialogTitle sx={{ color: 'error.main', fontWeight: 'normal' }}>Delete Timesheet</DialogTitle>
         <DialogContent>
           <Box sx={{ textAlign: 'center', mt: 2, mb: 1 }}>
             <Trash size={48} color="#f44336" style={{ marginBottom: '16px' }} />
@@ -509,7 +509,7 @@ export default function Timesheets() {
               Are you sure you want to delete {filesToDelete.length > 1 ? `these ${filesToDelete.length} submitted timesheets` : 'this submitted timesheet'}?
             </Typography>
             {filesToDelete.length === 1 && (
-              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2, fontWeight: 'bold' }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2, fontWeight: 'normal' }}>
                 {filesToDelete[0]}
               </Typography>
             )}
@@ -527,7 +527,7 @@ export default function Timesheets() {
       </Dialog>
 
       <Dialog open={openClearRaw} onClose={() => setOpenClearRaw(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ color: 'error.main', fontWeight: 'bold' }}>Clear Raw Data</DialogTitle>
+        <DialogTitle sx={{ color: 'error.main', fontWeight: 'normal' }}>Clear Raw Data</DialogTitle>
         <DialogContent>
           <Box sx={{ textAlign: 'center', mt: 2, mb: 1 }}>
             <Trash size={48} color="#f44336" style={{ marginBottom: '16px' }} />

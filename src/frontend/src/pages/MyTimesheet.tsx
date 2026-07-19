@@ -189,7 +189,7 @@ export default function MyTimesheet() {
   return (
     <Box>
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', lg: 'center' }, gap: 2, mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1E293B', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
+        <Typography variant="h4" sx={{ fontWeight: 'normal', color: '#1E293B', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
           My Timesheet
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, flexWrap: 'wrap' }}>
@@ -219,19 +219,20 @@ export default function MyTimesheet() {
         <>
 
 
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'normal' }}>
             Recent Attendance (Count: {attendance ? attendance.length : 'null'})
           </Typography>
           <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
             <Table sx={{ minWidth: 650 }}>
               <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Employee ID</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Overtime</TableCell>
+                  <TableCell sx={{ fontWeight: 'normal' }}>Employee ID</TableCell>
+                  <TableCell sx={{ fontWeight: 'normal' }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 'normal' }}>Check In</TableCell>
+                  <TableCell sx={{ fontWeight: 'normal' }}>Check Out</TableCell>
+                  <TableCell sx={{ fontWeight: 'normal' }}>Status</TableCell>
+                  <TableCell sx={{ fontWeight: 'normal' }}>Duty Code</TableCell>
+                  <TableCell sx={{ fontWeight: 'normal' }}>Overtime</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -245,11 +246,14 @@ export default function MyTimesheet() {
                       <Chip label={row.status} color="primary" size="small" variant="outlined" />
                     </TableCell>
                     <TableCell>
+                      {row.overtimeType || (new Date(row.date).getDay() === 5 || new Date(row.date).getDay() === 6 ? 'WE' : (row.status === 'Absent' ? 'AWP' : 'OD'))}
+                    </TableCell>
+                    <TableCell>
                       {row.overtimeMinutes > 0 ? (
                         <Chip
                           label={formatOvertimeMinutes(row.overtimeMinutes)}
                           size="small"
-                          sx={{ bgcolor: '#FFF3CD', color: '#856404', fontWeight: 600, border: '1px solid #FFEAA7' }}
+                          sx={{ bgcolor: '#FFF3CD', color: '#856404', fontWeight: 400, border: '1px solid #FFEAA7' }}
                         />
                       ) : (
                         <Typography variant="body2" color="text.disabled">–</Typography>
@@ -266,7 +270,7 @@ export default function MyTimesheet() {
 
 
       <Dialog open={openExport} onClose={() => setOpenExport(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 'bold' }}>Export My Timesheet (Step 2)</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'normal' }}>Export My Timesheet (Step 2)</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 1 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -390,7 +394,7 @@ export default function MyTimesheet() {
 
       {/* Dialog for Clear Data */}
       <Dialog open={openClear} onClose={() => setOpenClear(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ color: 'error.main', fontWeight: 'bold' }}>Clear Attendance Data</DialogTitle>
+        <DialogTitle sx={{ color: 'error.main', fontWeight: 'normal' }}>Clear Attendance Data</DialogTitle>
         <DialogContent>
           <Box sx={{ textAlign: 'center', mt: 2, mb: 1 }}>
             <Trash size={48} color="#f44336" style={{ marginBottom: '16px' }} />

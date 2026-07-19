@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Card, CardContent, CircularProgress, Button, Avatar, Chip, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert } from '@mui/material';
+import { Box, Typography, Card, CardContent, CircularProgress, Button, Avatar, Chip, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, Alert, MenuItem } from '@mui/material';
 import { Check, X, Clock, Plus, Trash2 } from 'lucide-react';
 import axios from 'axios';
 import { formatTime12Hour } from '../utils/dateUtils';
@@ -31,7 +31,7 @@ export default function Overtime() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean, id: number | null, action: 'approve' | 'reject' | 'delete' | 'delete_all', note: string }>({ open: false, id: null, action: 'approve', note: '' });
-  const [formData, setFormData] = useState({ date: '', startTime: '', endTime: '', reason: '' });
+  const [formData, setFormData] = useState({ date: '', startTime: '', endTime: '', reason: '', type: 'WFH' });
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({ open: false, message: '', severity: 'info' });
 
   const showMessage = (message: string, severity: 'success' | 'error' | 'info' | 'warning' = 'info') => {
@@ -95,11 +95,12 @@ export default function Overtime() {
         date: formData.date,
         startTime: formData.startTime + ':00',
         endTime: formData.endTime + ':00',
-        reason: formData.reason
+        reason: formData.reason,
+        type: formData.type
       };
       await axios.post('http://localhost:5222/api/overtime/me', data);
       setOpen(false);
-      setFormData({ date: '', startTime: '', endTime: '', reason: '' });
+      setFormData({ date: '', startTime: '', endTime: '', reason: '', type: 'WFH' });
       fetchData();
       showMessage('Overtime request submitted successfully.', 'success');
     } catch (err: any) {
@@ -111,8 +112,8 @@ export default function Overtime() {
   return (
     <Box>
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1E293B', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
-          {canApprove ? 'Overtime (WFH) Requests' : 'My Overtime (WFH)'}
+        <Typography variant="h4" sx={{ fontWeight: 'normal', color: '#1E293B', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
+          {canApprove ? 'Overtime Requests' : 'My Overtime'}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
           <Button variant="outlined" color="error" startIcon={<Trash2 size={18} />} onClick={() => setConfirmDialog({ open: true, id: -1, action: 'delete_all', note: '' })} sx={{ width: { xs: '100%', sm: 'auto' } }}>
@@ -147,18 +148,21 @@ export default function Overtime() {
                   </Avatar>
                   <Box>
                     {isAdmin && (
-                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'normal' }}>
                         {req.employee?.firstName} {req.employee?.lastName} ({req.employee?.employeeCode})
                       </Typography>
                     )}
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>{req.date}</Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 400 }}>{req.date}</Typography>
                     <Typography variant="body2" color="text.secondary">
                       {formatTime12Hour(req.startTime)} - {formatTime12Hour(req.endTime)}
                     </Typography>
-                    <Typography variant="body2" sx={{ mt: 1 }}><strong>Reason:</strong> {req.reason}</Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      <Chip size="small" label={req.type || 'WFH'} sx={{ mr: 1, height: 20, fontSize: '0.7rem' }} />
+                      <span>Reason:</span> {req.reason}
+                    </Typography>
                     {req.adminNote && (
                       <Typography variant="body2" color="primary" sx={{ mt: 0.5 }}>
-                        <strong>Admin Note:</strong> {req.adminNote}
+                        <span>Admin Note:</span> {req.adminNote}
                       </Typography>
                     )}
                   </Box>
@@ -167,7 +171,7 @@ export default function Overtime() {
                   <Chip
                     label={OVERTIME_STATUS_LABELS[req.status] ?? req.status}
                     color={getOvertimeStatusColor(req.status)}
-                    sx={{ fontWeight: 'bold', fontSize: '0.7rem' }}
+                    sx={{ fontWeight: 'normal', fontSize: '0.7rem' }}
                   />
                   {((isManager && req.status === 'PendingManagerApproval') ||
                     (isAdmin && req.status === 'PendingHRApproval') ||
@@ -193,17 +197,35 @@ export default function Overtime() {
 
       {/* Request Dialog */}
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
-        <DialogTitle sx={{ fontWeight: 'bold', pb: 1 }}>Request Overtime (WFH)</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'normal', pb: 1 }}>Request Overtime</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
-            <TextField
-              label="Date"
-              type="date"
-              fullWidth
-              slotProps={{ inputLabel: { shrink: true } }}
-              value={formData.date}
-              onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-            />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                select
+                label="Overtime Type"
+                fullWidth
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              >
+                <MenuItem value="WFH">Work From Home (WFH)</MenuItem>
+                <MenuItem value="OD">Office Day (OD)</MenuItem>
+                <MenuItem value="OH">Official Holiday (OH)</MenuItem>
+                <MenuItem value="Arv">Arrival Day (Arv)</MenuItem>
+                <MenuItem value="FD">Factory Day (FD)</MenuItem>
+                <MenuItem value="WE">Week End (WE)</MenuItem>
+                <MenuItem value="WWE">Work Week End (WWE)</MenuItem>
+                <MenuItem value="EF">Egypt Field Day (EF)</MenuItem>
+              </TextField>
+              <TextField
+                label="Date"
+                type="date"
+                fullWidth
+                slotProps={{ inputLabel: { shrink: true } }}
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              />
+            </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
                 label="Start Time"
@@ -240,7 +262,7 @@ export default function Overtime() {
 
       {/* Admin Confirm Dialog */}
       <Dialog open={confirmDialog.open} onClose={() => setConfirmDialog({ ...confirmDialog, open: false })} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: 3 } } }}>
-        <DialogTitle sx={{ fontWeight: 'bold' }}>
+        <DialogTitle sx={{ fontWeight: 'normal' }}>
           {confirmDialog.action === 'approve' ? 'Approve Request' : confirmDialog.action === 'reject' ? 'Reject Request' : confirmDialog.action === 'delete_all' ? 'Delete All Requests' : 'Delete Request'}
         </DialogTitle>
         <DialogContent>

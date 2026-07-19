@@ -257,10 +257,10 @@ export default function Employees() {
         <Table sx={{ minWidth: 650 }} aria-label="employee table">
           <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: 'bold' }}>Code</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>Email</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Code</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Name</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Email</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 'normal' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -307,7 +307,7 @@ export default function Employees() {
       </TableContainer>
 
       <Dialog open={resetConfirmOpen} onClose={() => setResetConfirmOpen(false)}>
-        <DialogTitle sx={{ fontWeight: 'bold' }}>Reset Password</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'normal' }}>Reset Password</DialogTitle>
         <DialogContent>
           <Typography>Are you sure you want to reset this employee's password to EMP-SYNC-(Employee Code)?</Typography>
         </DialogContent>
@@ -318,7 +318,7 @@ export default function Employees() {
       </Dialog>
 
       <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
-        <DialogTitle sx={{ fontWeight: 'bold', color: 'error.main' }}>Delete Employee</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'normal', color: 'error.main' }}>Delete Employee</DialogTitle>
         <DialogContent>
           <Typography>Are you sure you want to delete this employee? This action cannot be undone.</Typography>
         </DialogContent>
@@ -329,13 +329,13 @@ export default function Employees() {
       </Dialog>
 
       <Dialog open={balanceDialogOpen} onClose={() => setBalanceDialogOpen(false)}>
-        <DialogTitle sx={{ fontWeight: 'bold' }}>Leave Balance for {balanceEmployee?.firstName} {balanceEmployee?.lastName}</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'normal' }}>Leave Balance for {balanceEmployee?.firstName} {balanceEmployee?.lastName}</DialogTitle>
         <DialogContent>
           <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
             <Box>
-              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Annual Leave (RDO)</Typography>
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'normal' }}>Annual Leave (RDO)</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Remaining: <strong>{leaveBalance.annualLeaveTotal - leaveBalance.annualLeaveUsed}</strong>
+                Remaining: <span>{leaveBalance.annualLeaveTotal - leaveBalance.annualLeaveUsed}</span>
               </Typography>
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <TextField
@@ -358,9 +358,9 @@ export default function Employees() {
             </Box>
 
             <Box>
-              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>Emergency Leave (EDO)</Typography>
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'normal' }}>Emergency Leave (EDO)</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Remaining: <strong>{leaveBalance.emergencyLeaveTotal - leaveBalance.emergencyLeaveUsed}</strong>
+                Remaining: <span>{leaveBalance.emergencyLeaveTotal - leaveBalance.emergencyLeaveUsed}</span>
               </Typography>
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <TextField

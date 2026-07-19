@@ -127,14 +127,14 @@ export default function Dashboard() {
     <Box sx={{ maxWidth: '1400px', margin: '0 auto', pb: 8 }}>
       <Box sx={{ mb: 5, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'flex-end' }, gap: 2 }}>
         <Box>
-          <Typography variant="h3" sx={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', mb: 1, fontSize: { xs: '2.25rem', sm: '3rem' } }}>
+          <Typography variant="h3" sx={{ fontWeight: 400, color: '#0F172A', letterSpacing: '-0.02em', mb: 1, fontSize: { xs: '2.25rem', sm: '3rem' } }}>
             Overview
           </Typography>
-          <Typography variant="subtitle1" sx={{ color: '#64748B', fontWeight: 500, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
+          <Typography variant="subtitle1" sx={{ color: '#64748B', fontWeight: 400, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
             {user?.role === 'Admin' ? 'Measuresoft Operations & Workforce' : 'Company Announcements & Updates'}
           </Typography>
         </Box>
-        <Typography variant="body2" sx={{ color: '#94A3B8', fontWeight: 500, display: { xs: 'block', sm: 'block' } }}>
+        <Typography variant="body2" sx={{ color: '#94A3B8', fontWeight: 400, display: { xs: 'block', sm: 'block' } }}>
           {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </Typography>
       </Box>
@@ -169,10 +169,10 @@ export default function Dashboard() {
                 </Box>
                 <ArrowUpRight size={20} color="#94A3B8" />
               </Box>
-              <Typography variant="h3" sx={{ fontWeight: 700, color: '#0F172A', mb: 0.5, fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: { xs: '2rem', sm: '3rem' } }}>
+              <Typography variant="h3" sx={{ fontWeight: 'bold', color: '#0F172A', mb: 0.5, fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: { xs: '2rem', sm: '3rem' } }}>
                 {stat.value}
               </Typography>
-              <Typography variant="body2" sx={{ color: '#64748B', fontWeight: 600 }}>
+              <Typography variant="body2" sx={{ color: '#64748B', fontWeight: 400 }}>
                 {stat.title}
               </Typography>
             </Paper>
@@ -193,14 +193,14 @@ export default function Dashboard() {
             }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
                 <Box>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 400, color: '#0F172A' }}>
                     Attendance Analytics
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748B' }}>
                     Past 7 days performance
                   </Typography>
                 </Box>
-                <Chip icon={<CalendarDays size={16} />} label="Last 7 Days" size="small" sx={{ bgcolor: '#F1F5F9', color: '#475569', fontWeight: 600, borderRadius: '8px' }} />
+                <Chip icon={<CalendarDays size={16} />} label="Last 7 Days" size="small" sx={{ bgcolor: '#F1F5F9', color: '#475569', fontWeight: 400, borderRadius: '8px' }} />
               </Box>
               
               <Box sx={{ height: 320, width: '100%', mt: 2 }}>
@@ -217,13 +217,13 @@ export default function Dashboard() {
                       dataKey="date" 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: '#94A3B8', fontSize: 13, fontWeight: 500 }} 
+                      tick={{ fill: '#94A3B8', fontSize: 13, fontWeight: 400 }} 
                       dy={10} 
                     />
                     <YAxis 
                       axisLine={false} 
                       tickLine={false} 
-                      tick={{ fill: '#94A3B8', fontSize: 13, fontWeight: 500 }} 
+                      tick={{ fill: '#94A3B8', fontSize: 13, fontWeight: 400 }} 
                     />
                     <Tooltip 
                       contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '12px 16px' }}
@@ -249,12 +249,12 @@ export default function Dashboard() {
                 flexGrow: 1
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 400, color: '#0F172A' }}>
                     Live Activity
                   </Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(16, 185, 129, 0.1)', px: 1.5, py: 0.5, borderRadius: 4 }}>
                     <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#10B981', animation: 'pulse 2s infinite' }} />
-                    <Typography variant="caption" sx={{ color: '#059669', fontWeight: 600 }}>Live</Typography>
+                    <Typography variant="caption" sx={{ color: '#059669', fontWeight: 400 }}>Live</Typography>
                   </Box>
                 </Box>
                 
@@ -266,24 +266,24 @@ export default function Dashboard() {
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {liveList.slice(0, 5).map((emp) => (
                       <Box key={emp.employeeId} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar sx={{ bgcolor: 'rgba(99, 102, 241, 0.1)', color: '#4F46E5', width: 40, height: 40, fontSize: '1rem', fontWeight: 600 }}>
+                        <Avatar sx={{ bgcolor: 'rgba(99, 102, 241, 0.1)', color: '#4F46E5', width: 40, height: 40, fontSize: '1rem', fontWeight: 400 }}>
                           {emp.employeeName.charAt(0)}
                         </Avatar>
                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 400, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {emp.employeeName}
                           </Typography>
                           <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {emp.departmentName}
                           </Typography>
                         </Box>
-                        <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 600, bgcolor: '#F8FAFC', px: 1.5, py: 0.5, borderRadius: '6px' }}>
+                        <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 400, bgcolor: '#F8FAFC', px: 1.5, py: 0.5, borderRadius: '6px' }}>
                           {formatTime12Hour(emp.checkInTime)}
                         </Typography>
                       </Box>
                     ))}
                     {liveList.length > 5 && (
-                      <Button variant="text" onClick={() => setOpenLiveDialog(true)} sx={{ color: '#6366F1', textTransform: 'none', fontWeight: 600 }}>
+                      <Button variant="text" onClick={() => setOpenLiveDialog(true)} sx={{ color: '#6366F1', textTransform: 'none', fontWeight: 400 }}>
                         View all {liveList.length} employees
                       </Button>
                     )}
@@ -303,7 +303,7 @@ export default function Dashboard() {
                 <Box sx={{ p: 1, bgcolor: '#FEF2F2', borderRadius: '10px' }}>
                   <Megaphone size={20} color="#EF4444" />
                 </Box>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                <Typography variant="h6" sx={{ fontWeight: 400, color: '#0F172A' }}>
                   Announcements
                 </Typography>
               </Box>
@@ -321,16 +321,16 @@ export default function Dashboard() {
                           sx={{ 
                             bgcolor: ann.type === 'Holiday' ? '#F0FDF4' : '#EFF6FF', 
                             color: ann.type === 'Holiday' ? '#16A34A' : '#2563EB',
-                            fontWeight: 600,
+                            fontWeight: 400,
                             height: 24,
                             fontSize: '0.75rem'
                           }} 
                         />
-                        <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
+                        <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 400 }}>
                           {new Date(ann.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </Typography>
                       </Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E293B', mb: 0.5 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 400, color: '#1E293B', mb: 0.5 }}>
                         {ann.title}
                       </Typography>
                       <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.5 }}>
@@ -347,7 +347,7 @@ export default function Dashboard() {
       </Box>
       
       <Dialog open={openLiveDialog} onClose={() => setOpenLiveDialog(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'bold' }}>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'normal' }}>
           Live Activity ({liveList.length})
           <IconButton onClick={() => setOpenLiveDialog(false)} size="small"><X size={20} /></IconButton>
         </DialogTitle>
@@ -355,18 +355,18 @@ export default function Dashboard() {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             {liveList.map((emp) => (
               <Box key={emp.employeeId} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Avatar sx={{ bgcolor: 'rgba(99, 102, 241, 0.1)', color: '#4F46E5', width: 40, height: 40, fontSize: '1rem', fontWeight: 600 }}>
+                <Avatar sx={{ bgcolor: 'rgba(99, 102, 241, 0.1)', color: '#4F46E5', width: 40, height: 40, fontSize: '1rem', fontWeight: 400 }}>
                   {emp.employeeName.charAt(0)}
                 </Avatar>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 400, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {emp.employeeName}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {emp.departmentName}
                   </Typography>
                 </Box>
-                <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 600, bgcolor: '#F8FAFC', px: 1.5, py: 0.5, borderRadius: '6px' }}>
+                <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 400, bgcolor: '#F8FAFC', px: 1.5, py: 0.5, borderRadius: '6px' }}>
                   {formatTime12Hour(emp.checkInTime)}
                 </Typography>
               </Box>

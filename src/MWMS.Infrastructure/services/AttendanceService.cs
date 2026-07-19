@@ -210,6 +210,8 @@ public class AttendanceService : IAttendanceService
     public async Task<IEnumerable<AttendanceResponseDto>> GetEmployeeAttendanceAsync(int employeeId)
     {
         var attendances = await _attendanceRepository.GetByEmployeeAsync(employeeId);
+        var overtimes = await _overtimeRepository.GetByEmployeeAsync(employeeId);
+        var periodOvertimes = overtimes.Where(o => o.Status == "Approved").GroupBy(o => o.Date).ToDictionary(g => g.Key, g => g.ToList());
 
         return attendances.Select(a => new AttendanceResponseDto
         {
@@ -223,7 +225,8 @@ public class AttendanceService : IAttendanceService
             WorkedHours = a.WorkedHours,
             LateMinutes = a.LateMinutes,
             EarlyLeaveMinutes = a.EarlyLeaveMinutes,
-            OvertimeMinutes = a.OvertimeMinutes
+            OvertimeMinutes = a.OvertimeMinutes,
+            OvertimeType = periodOvertimes.TryGetValue(a.Date, out var ots) && ots.Any() ? ots.First().Type : null
         });
     }
 
@@ -442,7 +445,12 @@ public class AttendanceService : IAttendanceService
 
             if (periodAttendances.TryGetValue(date, out var attendance))
             {
-                worksheet.Cell(row, 4).Value = "OD"; // Duty Code
+                string dutyCode = "OD";
+                if (periodOvertimes.TryGetValue(date, out var ots) && ots.Any())
+                {
+                    dutyCode = ots.First().Type;
+                }
+                worksheet.Cell(row, 4).Value = dutyCode; // Duty Code
                 
                 if (attendance.CheckIn.HasValue)
                     worksheet.Cell(row, 5).Value = attendance.CheckIn.Value.ToTimeSpan(); 
@@ -460,7 +468,7 @@ public class AttendanceService : IAttendanceService
 
                 if (periodOvertimes.TryGetValue(date, out var overtimes))
                 {
-                    var otDesc = string.Join(", ", overtimes.Select(o => $"Overtime (WFH) from {o.StartTime} to {o.EndTime}"));
+                    var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}"));
                     desc = desc + " | " + otDesc;
                 }
                 
@@ -469,12 +477,17 @@ public class AttendanceService : IAttendanceService
             else
             {
                 var isWeekend = date.DayOfWeek == DayOfWeek.Friday || date.DayOfWeek == DayOfWeek.Saturday;
-                worksheet.Cell(row, 4).Value = isWeekend ? "WE" : "AWP";
+                string dutyCode = isWeekend ? "WE" : "AWP";
+                if (periodOvertimes.TryGetValue(date, out var ots) && ots.Any())
+                {
+                    dutyCode = ots.First().Type;
+                }
+                worksheet.Cell(row, 4).Value = dutyCode;
                 
                 string desc = isWeekend ? "Weekend" : "Absent";
                 if (periodOvertimes.TryGetValue(date, out var overtimes))
                 {
-                    var otDesc = string.Join(", ", overtimes.Select(o => $"Overtime (WFH) from {o.StartTime} to {o.EndTime}"));
+                    var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}"));
                     desc = desc + " | " + otDesc;
                 }
                 worksheet.Cell(row, 12).Value = desc;
@@ -558,7 +571,12 @@ public class AttendanceService : IAttendanceService
 
                 if (periodAttendances.TryGetValue(date, out var attendance))
                 {
-                    worksheet.Cell(row, 4).Value = "OD"; // Duty Code
+                    string dutyCode = "OD";
+                    if (periodOvertimes.TryGetValue(date, out var ots) && ots.Any())
+                    {
+                        dutyCode = ots.First().Type;
+                    }
+                    worksheet.Cell(row, 4).Value = dutyCode; // Duty Code
                     
                     if (attendance.CheckIn.HasValue)
                         worksheet.Cell(row, 5).Value = attendance.CheckIn.Value.ToTimeSpan(); 
@@ -577,7 +595,7 @@ public class AttendanceService : IAttendanceService
 
                     if (periodOvertimes.TryGetValue(date, out var overtimes))
                     {
-                        var otDesc = string.Join(", ", overtimes.Select(o => $"Overtime (WFH) from {o.StartTime} to {o.EndTime}"));
+                        var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}"));
                         desc = desc + " | " + otDesc;
                     }
                     
@@ -586,12 +604,17 @@ public class AttendanceService : IAttendanceService
                 else
                 {
                     var isWeekend = date.DayOfWeek == DayOfWeek.Friday || date.DayOfWeek == DayOfWeek.Saturday;
-                    worksheet.Cell(row, 4).Value = isWeekend ? "WE" : "AWP";
+                    string dutyCode = isWeekend ? "WE" : "AWP";
+                    if (periodOvertimes.TryGetValue(date, out var ots) && ots.Any())
+                    {
+                        dutyCode = ots.First().Type;
+                    }
+                    worksheet.Cell(row, 4).Value = dutyCode;
                     
                     string desc = isWeekend ? "Weekend" : "Absent";
                     if (periodOvertimes.TryGetValue(date, out var overtimes))
                     {
-                        var otDesc = string.Join(", ", overtimes.Select(o => $"Overtime (WFH) from {o.StartTime} to {o.EndTime}"));
+                        var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}"));
                         desc = desc + " | " + otDesc;
                     }
                     worksheet.Cell(row, 12).Value = desc;

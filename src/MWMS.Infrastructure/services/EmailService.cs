@@ -49,7 +49,7 @@ public class EmailService : IEmailService
                     }
 
                     var urlRegex = new System.Text.RegularExpressions.Regex(@"(http(s)?://[^\s<]+)");
-                    formattedBody = urlRegex.Replace(formattedBody, "<div style='margin: 30px 0; text-align: center;'><a href='$1' style='background-color: #5b4fe8; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; font-size: 16px;'>Secure Action Link</a></div><div style='margin-top: 15px;'><span style='font-size: 13px; color: #a1a1aa; word-break: break-all;'>If the button doesn't work, copy this link: $1</span></div>");
+                    formattedBody = urlRegex.Replace(formattedBody, "<div style='margin: 30px 0; text-align: center;'><a href='$1' style='background-color: #5b4fe8; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: normal; display: inline-block; font-size: 16px;'>Secure Action Link</a></div><div style='margin-top: 15px;'><span style='font-size: 13px; color: #a1a1aa; word-break: break-all;'>If the button doesn't work, copy this link: $1</span></div>");
 
                     string finalHtml = $@"
 <!DOCTYPE html>
@@ -67,7 +67,7 @@ public class EmailService : IEmailService
         
         <!-- Content -->
         <div style='padding: 40px 30px; font-size: 16px; color: #e4e4e7; line-height: 1.6;'>
-            <h2 style='color: #f4f4f5; margin-top: 0; margin-bottom: 24px; font-size: 24px; font-weight: 700;'>{subject}</h2>
+            <h2 style='color: #f4f4f5; margin-top: 0; margin-bottom: 24px; font-size: 24px; font-weight: 400;'>{subject}</h2>
             {formattedBody}
         </div>
         

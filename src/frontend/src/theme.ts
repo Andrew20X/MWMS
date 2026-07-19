@@ -7,7 +7,7 @@ const theme = createTheme({
       main: '#48657B', // Slate blue from the top bar
     },
     secondary: {
-      main: '#2E7D32', // Green from success message
+      main: '#587f77ff', // Green from success message
     },
     background: {
       default: '#F5F7FA', // Light clean background
@@ -41,13 +41,6 @@ const theme = createTheme({
         root: {
           backgroundImage: 'none',
           borderRadius: '12px',
-        },
-      },
-    },
-    MuiCssBaseline: {
-      styleOverrides: {
-        'input::-ms-reveal, input::-ms-clear': {
-          display: 'none !important',
         },
       },
     },

@@ -115,7 +115,7 @@ export default function Corrections() {
   return (
     <Box>
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 4 }}>
-        <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1E293B', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
+        <Typography variant="h4" sx={{ fontWeight: 'normal', color: '#1E293B', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
           {isAdmin ? 'Pending Corrections' : 'My Corrections'}
         </Typography>
         {!isAdmin && (
@@ -145,7 +145,7 @@ export default function Corrections() {
                       {req.employee?.firstName?.[0] || 'E'}
                     </Avatar>
                     <Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 'normal' }}>
                         {req.employee?.firstName} {req.employee?.lastName}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
@@ -156,7 +156,7 @@ export default function Corrections() {
 
                   <Box sx={{ backgroundColor: '#F8FAFC', p: 2, borderRadius: 2, mb: 2 }}>
                     <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Clock size={16} /> Date: <strong>{new Date(req.date).toLocaleDateString()}</strong>
+                      <Clock size={16} /> Date: <span>{new Date(req.date).toLocaleDateString()}</span>
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       Req In: {formatTime12Hour(req.requestedCheckIn)}
@@ -172,7 +172,7 @@ export default function Corrections() {
 
                   {req.adminNote && (
                     <Box sx={{ backgroundColor: 'rgba(0,0,0,0.03)', p: 1.5, borderRadius: 2, mb: 3 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 'bold', display: 'block', mb: 0.5 }}>
+                      <Typography variant="caption" sx={{ fontWeight: 'normal', display: 'block', mb: 0.5 }}>
                         Admin Note:
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
@@ -238,7 +238,7 @@ export default function Corrections() {
       )}
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 'bold' }}>Request Missed Punch Correction</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'normal' }}>Request Missed Punch Correction</DialogTitle>
         <DialogContent>
           <TextField
             fullWidth
@@ -285,7 +285,7 @@ export default function Corrections() {
       </Dialog>
 
       <Dialog open={confirmDialog.open} onClose={() => setConfirmDialog({ ...confirmDialog, open: false })} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 'bold' }}>
+        <DialogTitle sx={{ fontWeight: 'normal' }}>
           Confirm {confirmDialog.action === 'approve' ? 'Approval' : 'Rejection'}
         </DialogTitle>
         <DialogContent>
@@ -316,7 +316,7 @@ export default function Corrections() {
       </Dialog>
 
       <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ ...deleteDialog, open: false })} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 'bold', color: 'error.main' }}>
+        <DialogTitle sx={{ fontWeight: 'normal', color: 'error.main' }}>
           Confirm Deletion
         </DialogTitle>
         <DialogContent>

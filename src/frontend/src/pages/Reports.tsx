@@ -135,7 +135,7 @@ export default function Reports() {
   return (
     <Box>
       <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2 }}>
-        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'text.primary', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
+        <Typography variant="h4" sx={{ fontWeight: 'normal', color: 'text.primary', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
           Reports & Advanced Search
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
@@ -248,15 +248,15 @@ export default function Reports() {
           <Table stickyHeader sx={{ minWidth: 650 }}>
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Employee ID</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Worked Hrs</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Late</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Overtime</TableCell>
+                <TableCell sx={{ fontWeight: 'normal' }}>Date</TableCell>
+                <TableCell sx={{ fontWeight: 'normal' }}>Employee ID</TableCell>
+                <TableCell sx={{ fontWeight: 'normal' }}>Name</TableCell>
+                <TableCell sx={{ fontWeight: 'normal' }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 'normal' }}>Check In</TableCell>
+                <TableCell sx={{ fontWeight: 'normal' }}>Check Out</TableCell>
+                <TableCell sx={{ fontWeight: 'normal' }}>Worked Hrs</TableCell>
+                <TableCell sx={{ fontWeight: 'normal' }}>Late</TableCell>
+                <TableCell sx={{ fontWeight: 'normal' }}>Overtime</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

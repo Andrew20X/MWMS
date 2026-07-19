@@ -115,7 +115,8 @@ public class AttendanceController : ControllerBase
                 Date = a.Date.ToString("yyyy-MM-dd"),
                 CheckIn = a.CheckIn.HasValue ? a.CheckIn.Value.ToString("HH:mm") : null,
                 CheckOut = a.CheckOut.HasValue ? a.CheckOut.Value.ToString("HH:mm") : null,
-                Status = a.Status.ToString()
+                Status = a.Status.ToString(),
+                LateMinutes = a.LateMinutes
             })
             .ToList();
             
