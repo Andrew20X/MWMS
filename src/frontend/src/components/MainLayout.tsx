@@ -122,7 +122,7 @@ export default function MainLayout() {
             >
               <Menu />
             </IconButton>
-            <img src="/logo.png" alt="Measuresoft Logo" style={{ height: '45px', objectFit: 'contain' }} />
+            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Measuresoft Logo" style={{ height: '45px', objectFit: 'contain' }} />
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
             <Typography variant="body2" sx={{ fontWeight: 'normal', display: { xs: 'none', sm: 'block' }, color: 'text.primary' }}>{user?.fullName || user?.username} ({user?.positionName || user?.role})</Typography>

@@ -55,7 +55,7 @@ export default function Login() {
     }}>
       <Paper elevation={12} sx={{ p: 5, width: '100%', maxWidth: '400px', borderRadius: '16px', bgcolor: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)', border: '1px solid rgba(0, 0, 0, 0.05)' }}>
         <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <img src="/logo.png" alt="Measuresoft Logo" style={{ height: '60px', objectFit: 'contain', marginBottom: '16px' }} />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Measuresoft Logo" style={{ height: '60px', objectFit: 'contain', marginBottom: '16px' }} />
           <Typography variant="h5" sx={{ fontWeight: 'normal' }}>Welcome Back</Typography>
           <Typography variant="body2" color="text.secondary">Sign in to your account</Typography>
         </Box>
