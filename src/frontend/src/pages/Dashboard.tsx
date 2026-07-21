@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Chip, CircularProgress, Alert, Avatar, Divider, Button, Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
-import { Users, Clock, AlertCircle, CheckCircle2, CalendarDays, ArrowUpRight, Megaphone, X } from 'lucide-react';
+import { Users, Clock, AlertCircle, CheckCircle2, CalendarDays, ArrowUpRight, Megaphone, X, RefreshCw } from 'lucide-react';
 
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
@@ -37,12 +37,26 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [openLiveDialog, setOpenLiveDialog] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuth();
+
+  const refreshLiveActivity = async () => {
+    if (!user) return;
+    setRefreshing(true);
+    try {
+      const liveRes = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Dashboard/live', { headers: { Authorization: `Bearer ${user.token}` } });
+      setLiveList(liveRes.data);
+    } catch (err: any) {
+      console.error("Failed to refresh live activity", err);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     const fetchAnnouncements = async () => {
       try {
-        const annRes = await axios.get('http://localhost:5222/api/Announcements', {
+        const annRes = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Announcements', {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
         setAnnouncements(annRes.data);
@@ -54,9 +68,9 @@ export default function Dashboard() {
     const fetchAdminData = async () => {
       try {
         const [statsRes, trendRes, liveRes] = await Promise.all([
-          axios.get('http://localhost:5222/api/Dashboard/stats', { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get('http://localhost:5222/api/Dashboard/trend?days=7', { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get('http://localhost:5222/api/Dashboard/live', { headers: { Authorization: `Bearer ${user?.token}` } })
+          axios.get('https://andrew20x-001-site1.itempurl.com/api/Dashboard/stats', { headers: { Authorization: `Bearer ${user?.token}` } }),
+          axios.get('https://andrew20x-001-site1.itempurl.com/api/Dashboard/trend?days=7', { headers: { Authorization: `Bearer ${user?.token}` } }),
+          axios.get('https://andrew20x-001-site1.itempurl.com/api/Dashboard/live', { headers: { Authorization: `Bearer ${user?.token}` } })
         ]);
         setStats(statsRes.data);
         setTrend(trendRes.data);
@@ -249,9 +263,14 @@ export default function Dashboard() {
                 flexGrow: 1
               }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 400, color: '#0F172A' }}>
-                    Live Activity
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 400, color: '#0F172A' }}>
+                      Live Activity
+                    </Typography>
+                    <IconButton onClick={refreshLiveActivity} size="small" disabled={refreshing}>
+                      <RefreshCw size={16} color={refreshing ? '#94A3B8' : '#64748B'} className={refreshing ? 'spin' : ''} />
+                    </IconButton>
+                  </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(16, 185, 129, 0.1)', px: 1.5, py: 0.5, borderRadius: 4 }}>
                     <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#10B981', animation: 'pulse 2s infinite' }} />
                     <Typography variant="caption" sx={{ color: '#059669', fontWeight: 400 }}>Live</Typography>
@@ -381,6 +400,13 @@ export default function Dashboard() {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
             70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+          }
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          .spin {
+            animation: spin 1s linear infinite;
           }
         `}
       </style>

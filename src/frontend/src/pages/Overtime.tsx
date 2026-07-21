@@ -44,7 +44,7 @@ export default function Overtime() {
 
   const fetchData = async () => {
     try {
-      const url = canApprove ? 'http://localhost:5222/api/overtime' : 'http://localhost:5222/api/overtime/me';
+      const url = canApprove ? 'https://andrew20x-001-site1.itempurl.com/api/overtime' : 'https://andrew20x-001-site1.itempurl.com/api/overtime/me';
       const res = await axios.get(url);
       setOvertimes(res.data);
     } catch (err) {
@@ -57,7 +57,7 @@ export default function Overtime() {
   const handleConfirmAction = async () => {
     try {
       if (confirmDialog.action === 'delete_all') {
-        await axios.delete(`http://localhost:5222/api/overtime/all`);
+        await axios.delete(`https://andrew20x-001-site1.itempurl.com/api/overtime/all`);
         setConfirmDialog({ open: false, id: null, action: 'approve', note: '' });
         fetchData();
         showMessage(`All overtime requests deleted successfully.`, 'success');
@@ -67,9 +67,9 @@ export default function Overtime() {
       if (!confirmDialog.id) return;
 
       if (confirmDialog.action === 'delete') {
-        await axios.delete(`http://localhost:5222/api/overtime/${confirmDialog.id}`);
+        await axios.delete(`https://andrew20x-001-site1.itempurl.com/api/overtime/${confirmDialog.id}`);
       } else {
-        await axios.put(`http://localhost:5222/api/overtime/${confirmDialog.id}/${confirmDialog.action}`, `"${confirmDialog.note}"`, {
+        await axios.put(`https://andrew20x-001-site1.itempurl.com/api/overtime/${confirmDialog.id}/${confirmDialog.action}`, `"${confirmDialog.note}"`, {
           headers: { 'Content-Type': 'application/json' }
         });
       }
@@ -98,7 +98,7 @@ export default function Overtime() {
         reason: formData.reason,
         type: formData.type
       };
-      await axios.post('http://localhost:5222/api/overtime/me', data);
+      await axios.post('https://andrew20x-001-site1.itempurl.com/api/overtime/me', data);
       setOpen(false);
       setFormData({ date: '', startTime: '', endTime: '', reason: '', type: 'WFH' });
       fetchData();

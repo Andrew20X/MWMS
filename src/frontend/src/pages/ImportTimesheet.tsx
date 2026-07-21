@@ -53,7 +53,7 @@ export default function Timesheets() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5222/api/Attendance/recent', {
+      const res = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Attendance/recent', {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setLogs(res.data);
@@ -67,7 +67,7 @@ export default function Timesheets() {
   const fetchSubmitted = async () => {
     setLoadingSubmitted(true);
     try {
-      const res = await axios.get('http://localhost:5222/api/Attendance/submitted', {
+      const res = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Attendance/submitted', {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setSubmittedFiles(res.data);
@@ -97,7 +97,7 @@ export default function Timesheets() {
     setMessage(null);
 
     try {
-      const response = await axios.post('http://localhost:5222/api/Attendance/import', formData, {
+      const response = await axios.post('https://andrew20x-001-site1.itempurl.com/api/Attendance/import', formData, {
         headers: { 
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${user?.token}`
@@ -120,7 +120,7 @@ export default function Timesheets() {
     setFetchingDevice(true);
     setMessage(null);
     try {
-      const response = await axios.post('http://localhost:5222/api/Attendance/fetch-from-device', {}, {
+      const response = await axios.post('https://andrew20x-001-site1.itempurl.com/api/Attendance/fetch-from-device', {}, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setMessage({ type: 'success', text: response.data.message });
@@ -141,7 +141,7 @@ export default function Timesheets() {
     }
     setExporting(true);
     try {
-      const response = await axios.get(`http://localhost:5222/api/Attendance/export/all?startDate=${startDate}&endDate=${endDate}`, {
+      const response = await axios.get(`https://andrew20x-001-site1.itempurl.com/api/Attendance/export/all?startDate=${startDate}&endDate=${endDate}`, {
         responseType: 'blob', // Important for file downloads
         headers: { Authorization: `Bearer ${user?.token}` }
       });
@@ -185,7 +185,7 @@ export default function Timesheets() {
   const handleClearRaw = async () => {
     setClearingRaw(true);
     try {
-      const response = await axios.delete('http://localhost:5222/api/Attendance/raw/all', {
+      const response = await axios.delete('https://andrew20x-001-site1.itempurl.com/api/Attendance/raw/all', {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setMessage({ type: 'success', text: response.data.message || 'All raw data cleared.' });
@@ -203,7 +203,7 @@ export default function Timesheets() {
 
     const handleDownloadSubmitted = async (fileName: string) => {
       try {
-        const res = await axios.get(`http://localhost:5222/api/Attendance/submitted/download/${fileName}`, {
+        const res = await axios.get(`https://andrew20x-001-site1.itempurl.com/api/Attendance/submitted/download/${fileName}`, {
           responseType: 'blob',
           headers: { Authorization: `Bearer ${user?.token}` }
         });
@@ -223,7 +223,7 @@ export default function Timesheets() {
 
     const handleDownloadAllSubmitted = async () => {
       try {
-        const res = await axios.get('http://localhost:5222/api/Attendance/submitted/download-all', {
+        const res = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Attendance/submitted/download-all', {
           responseType: 'blob',
           headers: { Authorization: `Bearer ${user?.token}` }
         });
@@ -267,7 +267,7 @@ export default function Timesheets() {
     setDeleting(true);
     try {
       await Promise.all(filesToDelete.map(fileName => 
-        axios.delete(`http://localhost:5222/api/Attendance/submitted/${fileName}`, {
+        axios.delete(`https://andrew20x-001-site1.itempurl.com/api/Attendance/submitted/${fileName}`, {
           headers: { Authorization: `Bearer ${user?.token}` }
         })
       ));

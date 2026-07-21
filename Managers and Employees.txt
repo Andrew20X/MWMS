@@ -1,0 +1,47 @@
+Hossam Sherif (Managing Director)
+├── Fatma Abdelgawad (Legal Affair Specialist)
+├── Riham Abdelaziz (Office Manager)
+├── Sales Manager
+│   └── Sales Team
+├── Abdel Aziz Abaza (BD Manager)
+│   └── Couriers
+├── Ahmed Ghazy (Quality Manager)
+│   └── Quality Assistant
+├── Karim Hanafy (HR Manager)
+│   └── Sohila Hany (HR Coordinator)
+│       ├── Service Team
+│       └── Security
+└── Mohamed Taha (Admin Manager)
+    ├── Esraa El-Sayed (Admin Coordinator)
+    └── El Hassan Mostafa (Admin Assistant)
+        └── Drivers
+
+
+Gaber Ammar (Technical Director)
+├── Rodina Ahmed (CEO Assistant)
+├── Amr Mabrouk (CFO)
+│   ├── Abanoub Samir (Chief Accountant)
+│   │   └── Nourhan Magdy (AR Accountant)
+│   │       └── Donia El-Shamy (AP Accountant)
+│   │           └── Mahmoud Mehny (Courier)
+│   ├── [Accountant - name not visible]
+│   └── Senior Treasury
+│       └── Ramy Zakaria (Treasury Accountant)
+├── Ehab Ali (Procurement Manager)
+│   ├── Nesma Mahmoud (Procurement DC)
+│   │   └── Buyers Team
+│   └── Mona Gabr (Logistic Specialist)
+├── Technical Manager
+│   ├── Technical Supervisor
+│   │   └── Instrumentation and Control Engineers
+│   ├── Ahmed Hany (R&D Engineer)
+│   └── Ahmed Khalifa (Inventory Supervisor)
+│       └── Hisham Abd-Raouf (Storekeeper Assistant)
+├── Ahmed Khater (Mechanical Workshop Manager)
+│   └── Workshop Team
+├── Sherif Salah (Projects Manager)
+│   └── Kyrollos Nabil (Project Manager)
+│       ├── Mohamed Hatem (Civil Engineer)
+│       ├── Mohamed El-Saedy (Mechanical Engineer)
+│       └── Ahmed Barhoum (Document Controller)
+└── Loay El-Aswad (HSE Supervisor)

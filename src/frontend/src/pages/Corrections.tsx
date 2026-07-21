@@ -27,7 +27,7 @@ export default function Corrections() {
 
   const fetchData = async () => {
     try {
-      const url = isAdmin ? 'http://localhost:5222/api/corrections' : 'http://localhost:5222/api/corrections/me';
+      const url = isAdmin ? 'https://andrew20x-001-site1.itempurl.com/api/corrections' : 'https://andrew20x-001-site1.itempurl.com/api/corrections/me';
       const res = await axios.get(url);
       setCorrections(res.data);
     } catch (err) {
@@ -40,7 +40,7 @@ export default function Corrections() {
   const handleConfirmAction = async () => {
     if (!confirmDialog.id) return;
     try {
-      await axios.put(`http://localhost:5222/api/corrections/${confirmDialog.id}/${confirmDialog.action}`, { note: confirmDialog.note });
+      await axios.put(`https://andrew20x-001-site1.itempurl.com/api/corrections/${confirmDialog.id}/${confirmDialog.action}`, { note: confirmDialog.note });
       setConfirmDialog({ open: false, id: null, action: 'approve', note: '' });
       fetchData();
       showMessage(`Correction request ${confirmDialog.action}d successfully.`, 'success');
@@ -68,7 +68,7 @@ export default function Corrections() {
         requestedCheckIn: formData.requestedCheckIn ? formData.requestedCheckIn + ':00' : null,
         requestedCheckOut: formData.requestedCheckOut ? formData.requestedCheckOut + ':00' : null
       };
-      await axios.post('http://localhost:5222/api/Corrections', data);
+      await axios.post('https://andrew20x-001-site1.itempurl.com/api/Corrections', data);
       setOpen(false);
       setFormData({ date: '', requestedCheckIn: '', requestedCheckOut: '', reason: '' });
       fetchData();
@@ -94,12 +94,12 @@ export default function Corrections() {
   const executeDelete = async () => {
     try {
       if (deleteDialog.action === 'deleteAll') {
-        await axios.delete(`http://localhost:5222/api/corrections/all`, {
+        await axios.delete(`https://andrew20x-001-site1.itempurl.com/api/corrections/all`, {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
         showMessage('All correction requests deleted successfully.', 'success');
       } else if (deleteDialog.id) {
-        await axios.delete(`http://localhost:5222/api/corrections/${deleteDialog.id}`, {
+        await axios.delete(`https://andrew20x-001-site1.itempurl.com/api/corrections/${deleteDialog.id}`, {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
         showMessage('Correction request deleted successfully.', 'success');

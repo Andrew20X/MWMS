@@ -56,7 +56,7 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5222/api/Auth/change-password', {
+      const response = await fetch('https://andrew20x-001-site1.itempurl.com/api/Auth/change-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

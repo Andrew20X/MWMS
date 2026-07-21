@@ -92,7 +92,7 @@ export default function Reports() {
     setError('');
     try {
       const qs = buildQueryString();
-      const response = await axios.get(`http://localhost:5222/api/Reports/search?${qs}`);
+      const response = await axios.get(`https://andrew20x-001-site1.itempurl.com/api/Reports/search?${qs}`);
       setRecords(response.data);
     } catch (err: any) {
       setError('Failed to fetch reports.');
@@ -104,7 +104,7 @@ export default function Reports() {
   const handleExport = async (format: string) => {
     try {
       const qs = buildQueryString();
-      const url = `http://localhost:5222/api/Reports/export?${qs}&format=${format}`;
+      const url = `https://andrew20x-001-site1.itempurl.com/api/Reports/export?${qs}&format=${format}`;
 
       const response = await axios.get(url, {
         responseType: 'blob'
