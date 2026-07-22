@@ -27,6 +27,8 @@ public interface ILeaveService
 
     Task<bool> DeleteAllEmployeeRequestsAsync(int employeeId);
 
+    Task<bool> DeleteAllRequestsAsync();
+
     /// <summary>Returns the leave balance for an employee for the given year (auto-creates if missing).</summary>
     Task<LeaveBalanceDto> GetLeaveBalanceAsync(int employeeId, int year);
 

@@ -134,9 +134,9 @@ export default function Leaves() {
     try {
       let response;
       if (isAdmin || isManager) {
-        response = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Leaves/all');
+        response = await axios.get('http://localhost:5222/api/Leaves/all');
       } else {
-        response = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Leaves/me', {
+        response = await axios.get('http://localhost:5222/api/Leaves/me', {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
       }
@@ -151,7 +151,7 @@ export default function Leaves() {
   const fetchBalance = async () => {
     if (!user?.employeeId) return;
     try {
-      const res = await axios.get(`https://andrew20x-001-site1.itempurl.com/api/Leaves/balance/me`, {
+      const res = await axios.get(`http://localhost:5222/api/Leaves/balance/me`, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setBalance(res.data);
@@ -177,7 +177,7 @@ export default function Leaves() {
   const handleConfirmAction = async () => {
     if (!actionLeaveId) return;
     try {
-      await axios.post(`https://andrew20x-001-site1.itempurl.com/api/Leaves/${actionLeaveId}/${actionType}`, {
+      await axios.post(`http://localhost:5222/api/Leaves/${actionLeaveId}/${actionType}`, {
         approverId: user?.employeeId ?? 1,
         adminMessage: actionMessage
       });
@@ -193,7 +193,7 @@ export default function Leaves() {
 
   const handleAdd = async () => {
     try {
-      await axios.post('https://andrew20x-001-site1.itempurl.com/api/Leaves', newLeave, {
+      await axios.post('http://localhost:5222/api/Leaves', newLeave, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setOpen(false);
@@ -211,11 +211,11 @@ export default function Leaves() {
   const executeDelete = async () => {
     try {
       if (deleteDialog.action === 'deleteAll') {
-        await axios.delete('https://andrew20x-001-site1.itempurl.com/api/Leaves/all', {
+        await axios.delete('http://localhost:5222/api/Leaves/all', {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
       } else if (deleteDialog.id) {
-        await axios.delete(`https://andrew20x-001-site1.itempurl.com/api/Leaves/${deleteDialog.id}`, {
+        await axios.delete(`http://localhost:5222/api/Leaves/${deleteDialog.id}`, {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
       }
@@ -232,7 +232,7 @@ export default function Leaves() {
     setHistoryOpen(true);
     setHistoryLoading(true);
     try {
-      const res = await axios.get(`https://andrew20x-001-site1.itempurl.com/api/Leaves/${id}/history`);
+      const res = await axios.get(`http://localhost:5222/api/Leaves/${id}/history`);
       setHistoryData(res.data);
     } catch {
       setHistoryData([]);

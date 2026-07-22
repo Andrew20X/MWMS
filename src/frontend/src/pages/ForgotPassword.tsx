@@ -20,7 +20,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const response = await axios.post('https://andrew20x-001-site1.itempurl.com/api/Auth/forgot-password', {
+      const response = await axios.post('http://localhost:5222/api/Auth/forgot-password', {
         username,
         email
       });

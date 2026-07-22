@@ -20,7 +20,7 @@ export default function MyInsights() {
   useEffect(() => {
     const fetchAttendance = async () => {
       try {
-        const res = await axios.get('https://andrew20x-001-site1.itempurl.com/api/attendance/me', {
+        const res = await axios.get('http://localhost:5222/api/attendance/me', {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
         

@@ -39,15 +39,15 @@ export default function MainLayout() {
           {isAdmin && (
             <>
               <ListItem disablePadding>
-                <ListItemButton component={Link} to="/timesheet" onClick={() => setMobileOpen(false)}>
-                  <ListItemIcon><FileSpreadsheet color="#48657B" /></ListItemIcon>
-                  <ListItemText primary="Timesheets & Excel" />
-                </ListItemButton>
-              </ListItem>
-              <ListItem disablePadding>
                 <ListItemButton component={Link} to="/employees" onClick={() => setMobileOpen(false)}>
                   <ListItemIcon><Users color="#48657B" /></ListItemIcon>
                   <ListItemText primary="Employees" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/timesheet" onClick={() => setMobileOpen(false)}>
+                  <ListItemIcon><FileSpreadsheet color="#48657B" /></ListItemIcon>
+                  <ListItemText primary="Timesheets & Excel" />
                 </ListItemButton>
               </ListItem>
 

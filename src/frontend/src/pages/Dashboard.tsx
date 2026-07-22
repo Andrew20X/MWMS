@@ -24,7 +24,7 @@ interface AttendanceTrend {
 interface LiveAttendance {
   employeeId: number;
   employeeName: string;
-  departmentName: string;
+  positionName: string;
   checkInTime: string;
   status: string;
 }
@@ -44,7 +44,7 @@ export default function Dashboard() {
     if (!user) return;
     setRefreshing(true);
     try {
-      const liveRes = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Dashboard/live', { headers: { Authorization: `Bearer ${user.token}` } });
+      const liveRes = await axios.get('http://localhost:5222/api/Dashboard/live', { headers: { Authorization: `Bearer ${user.token}` } });
       setLiveList(liveRes.data);
     } catch (err: any) {
       console.error("Failed to refresh live activity", err);
@@ -56,7 +56,7 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchAnnouncements = async () => {
       try {
-        const annRes = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Announcements', {
+        const annRes = await axios.get('http://localhost:5222/api/Announcements', {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
         setAnnouncements(annRes.data);
@@ -68,9 +68,9 @@ export default function Dashboard() {
     const fetchAdminData = async () => {
       try {
         const [statsRes, trendRes, liveRes] = await Promise.all([
-          axios.get('https://andrew20x-001-site1.itempurl.com/api/Dashboard/stats', { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get('https://andrew20x-001-site1.itempurl.com/api/Dashboard/trend?days=7', { headers: { Authorization: `Bearer ${user?.token}` } }),
-          axios.get('https://andrew20x-001-site1.itempurl.com/api/Dashboard/live', { headers: { Authorization: `Bearer ${user?.token}` } })
+          axios.get('http://localhost:5222/api/Dashboard/stats', { headers: { Authorization: `Bearer ${user?.token}` } }),
+          axios.get('http://localhost:5222/api/Dashboard/trend?days=7', { headers: { Authorization: `Bearer ${user?.token}` } }),
+          axios.get('http://localhost:5222/api/Dashboard/live', { headers: { Authorization: `Bearer ${user?.token}` } })
         ]);
         setStats(statsRes.data);
         setTrend(trendRes.data);
@@ -293,7 +293,7 @@ export default function Dashboard() {
                             {emp.employeeName}
                           </Typography>
                           <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {emp.departmentName}
+                            {emp.positionName}
                           </Typography>
                         </Box>
                         <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 400, bgcolor: '#F8FAFC', px: 1.5, py: 0.5, borderRadius: '6px' }}>
@@ -352,6 +352,11 @@ export default function Dashboard() {
                       <Typography variant="subtitle2" sx={{ fontWeight: 400, color: '#1E293B', mb: 0.5 }}>
                         {ann.title}
                       </Typography>
+                      {user?.role === 'Admin' && (
+                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 0.5 }}>
+                          {ann.targetEmployee ? `Sent to: ${ann.targetEmployee.firstName} ${ann.targetEmployee.lastName}` : 'Sent to: All Employees'}
+                        </Typography>
+                      )}
                       <Typography variant="body2" sx={{ color: '#64748B', lineHeight: 1.5 }}>
                         {ann.content}
                       </Typography>
@@ -382,7 +387,7 @@ export default function Dashboard() {
                     {emp.employeeName}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {emp.departmentName}
+                    {emp.positionName}
                   </Typography>
                 </Box>
                 <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 400, bgcolor: '#F8FAFC', px: 1.5, py: 0.5, borderRadius: '6px' }}>

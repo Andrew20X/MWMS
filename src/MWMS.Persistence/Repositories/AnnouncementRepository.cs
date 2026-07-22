@@ -17,6 +17,7 @@ public class AnnouncementRepository : GenericRepository<Announcement>, IAnnounce
     public async Task<IEnumerable<Announcement>> GetActiveAnnouncementsAsync()
     {
         return await _dbSet
+            .Include(a => a.TargetEmployee)
             .Where(a => a.IsActive && !a.IsDeleted)
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();

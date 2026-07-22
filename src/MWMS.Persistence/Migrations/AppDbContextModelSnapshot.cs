@@ -49,6 +49,9 @@ namespace MWMS.Persistence.Migrations
                     b.Property<DateOnly?>("TargetDate")
                         .HasColumnType("date");
 
+                    b.Property<int?>("TargetEmployeeId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -61,6 +64,8 @@ namespace MWMS.Persistence.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TargetEmployeeId");
 
                     b.ToTable("Announcements");
                 });
@@ -671,6 +676,15 @@ namespace MWMS.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("MWMS.Domain.Entities.Announcement", b =>
+                {
+                    b.HasOne("MWMS.Domain.Entities.Employee", "TargetEmployee")
+                        .WithMany()
+                        .HasForeignKey("TargetEmployeeId");
+
+                    b.Navigation("TargetEmployee");
                 });
 
             modelBuilder.Entity("MWMS.Domain.Entities.ApprovalHistory", b =>

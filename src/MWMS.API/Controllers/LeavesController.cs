@@ -186,11 +186,15 @@ public class LeavesController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteLeave(int id)
     {
-        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
-        if (employeeIdClaim == null) return Unauthorized();
-
-        var employeeId = int.Parse(employeeIdClaim);
         var isAdmin = User.IsInRole("Admin");
+        int employeeId = 0;
+
+        if (!isAdmin)
+        {
+            var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
+            if (employeeIdClaim == null) return Unauthorized();
+            employeeId = int.Parse(employeeIdClaim);
+        }
 
         var success = await _leaveService.DeleteRequestAsync(id, employeeId, isAdmin);
         if (!success) return Forbid();
@@ -202,12 +206,20 @@ public class LeavesController : ControllerBase
     [Authorize]
     public async Task<IActionResult> DeleteAllLeaves()
     {
-        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
-        if (employeeIdClaim == null) return Unauthorized();
+        var isAdmin = User.IsInRole("Admin");
 
-        var employeeId = int.Parse(employeeIdClaim);
-
-        await _leaveService.DeleteAllEmployeeRequestsAsync(employeeId);
+        if (isAdmin)
+        {
+            await _leaveService.DeleteAllRequestsAsync();
+        }
+        else
+        {
+            var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
+            if (employeeIdClaim == null) return Unauthorized();
+            
+            var employeeId = int.Parse(employeeIdClaim);
+            await _leaveService.DeleteAllEmployeeRequestsAsync(employeeId);
+        }
 
         return NoContent();
     }

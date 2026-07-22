@@ -30,7 +30,7 @@ export default function ForceChangePassword() {
     setLoading(true);
 
     try {
-      await axios.post('https://andrew20x-001-site1.itempurl.com/api/Auth/change-password', {
+      await axios.post('http://localhost:5222/api/Auth/change-password', {
         oldPassword,
         newPassword
       }, {

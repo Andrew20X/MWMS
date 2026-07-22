@@ -10,4 +10,6 @@ public class Announcement : BaseEntity
     public string Type { get; set; } = "Notice"; // "Notice" or "Holiday"
     public DateOnly? TargetDate { get; set; } // For holidays
     public bool IsActive { get; set; } = true;
+    public int? TargetEmployeeId { get; set; }
+    public Employee? TargetEmployee { get; set; }
 }

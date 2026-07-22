@@ -46,7 +46,7 @@ export default function MyTimesheet() {
 
   const fetchData = async () => {
     try {
-      const attRes = await axios.get('https://andrew20x-001-site1.itempurl.com/api/attendance/me', {
+      const attRes = await axios.get('http://localhost:5222/api/attendance/me', {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setAttendance(attRes.data);
@@ -72,7 +72,7 @@ export default function MyTimesheet() {
     }
     setFetchingDevice(true);
     try {
-      const res = await axios.post('https://andrew20x-001-site1.itempurl.com/api/Attendance/fetch-from-device', { startDate, endDate }, {
+      const res = await axios.post('http://localhost:5222/api/Attendance/fetch-from-device', { startDate, endDate }, {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       showMessage(res.data.message || 'Device logs fetched and imported successfully!', "success");
@@ -92,7 +92,7 @@ export default function MyTimesheet() {
     setImporting(true);
 
     try {
-      await axios.post('https://andrew20x-001-site1.itempurl.com/api/Attendance/import/me', formData, {
+      await axios.post('http://localhost:5222/api/Attendance/import/me', formData, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${user?.token}` }
       });
       showMessage('Raw timesheet imported successfully!', "success");
@@ -115,7 +115,7 @@ export default function MyTimesheet() {
     setSubmitting(true);
 
     try {
-      await axios.post('https://andrew20x-001-site1.itempurl.com/api/Attendance/upload-final/me', formData, {
+      await axios.post('http://localhost:5222/api/Attendance/upload-final/me', formData, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${user?.token}` }
       });
       showMessage('Final timesheet submitted to HR successfully!', "success");
@@ -137,7 +137,7 @@ export default function MyTimesheet() {
     }
     setExporting(true);
     try {
-      const response = await axios.get(`https://andrew20x-001-site1.itempurl.com/api/Attendance/export/me?startDate=${startDate}&endDate=${endDate}`, {
+      const response = await axios.get(`http://localhost:5222/api/Attendance/export/me?startDate=${startDate}&endDate=${endDate}`, {
         responseType: 'blob',
         headers: { Authorization: `Bearer ${user?.token}` }
       });
@@ -174,7 +174,7 @@ export default function MyTimesheet() {
   const handleClearData = async () => {
     setClearing(true);
     try {
-      await axios.delete('https://andrew20x-001-site1.itempurl.com/api/Attendance/me', {
+      await axios.delete('http://localhost:5222/api/Attendance/me', {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       showMessage('Attendance data cleared successfully.', "success");

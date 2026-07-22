@@ -21,7 +21,7 @@ export default function Login() {
 
     try {
       // NOTE: Ensure proxy or correct port is used
-      const response = await axios.post('https://andrew20x-001-site1.itempurl.com/api/Auth/login', {
+      const response = await axios.post('http://localhost:5222/api/Auth/login', {
         username,
         password
       });

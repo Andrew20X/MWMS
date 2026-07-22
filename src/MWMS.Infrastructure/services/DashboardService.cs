@@ -87,7 +87,7 @@ public class DashboardService : IDashboardService
             {
                 EmployeeId = a.EmployeeId,
                 EmployeeName = $"{a.Employee?.FirstName} {a.Employee?.LastName}",
-                DepartmentName = a.Employee?.Department?.Name ?? "General",
+                PositionName = a.Employee?.Position?.Name ?? "General",
                 CheckInTime = a.CheckIn?.ToString("HH:mm") ?? "",
                 Status = a.Status.ToString()
             })

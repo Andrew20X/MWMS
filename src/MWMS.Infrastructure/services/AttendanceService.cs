@@ -15,15 +15,18 @@ public class AttendanceService : IAttendanceService
     private readonly IAttendanceRepository _attendanceRepository;
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IOvertimeRepository _overtimeRepository;
+    private readonly MWMS.Application.Interfaces.IGenericRepository<RawAttendanceLog> _rawLogRepository;
 
     public AttendanceService(
         IAttendanceRepository attendanceRepository, 
         IEmployeeRepository employeeRepository,
-        IOvertimeRepository overtimeRepository)
+        IOvertimeRepository overtimeRepository,
+        MWMS.Application.Interfaces.IGenericRepository<RawAttendanceLog> rawLogRepository)
     {
         _attendanceRepository = attendanceRepository;
         _employeeRepository = employeeRepository;
         _overtimeRepository = overtimeRepository;
+        _rawLogRepository = rawLogRepository;
     }
 
     public async Task DeleteMyAttendanceAsync(int employeeId)
@@ -38,9 +41,7 @@ public class AttendanceService : IAttendanceService
 
     public async Task DeleteAllRawAttendanceAsync()
     {
-        // For performance, we could use ExecuteDelete, but since we rely on EF Core Tracking, we can fetch all and delete.
-        // Assuming we want to clear all data in the table.
-        // Or if there's a specific date range, but they said "Delete All".
+        // Delete final processed attendances
         var allAttendances = (await _attendanceRepository.GetAttendancesByDateRangeAsync(DateOnly.MinValue, DateOnly.MaxValue)).ToList();
         
         foreach(var a in allAttendances) 
@@ -48,6 +49,14 @@ public class AttendanceService : IAttendanceService
             _attendanceRepository.Delete(a);
         }
         await _attendanceRepository.SaveChangesAsync();
+
+        // Also delete raw machine logs, so they can be re-fetched
+        var allRawLogs = (await _rawLogRepository.GetAllAsync()).ToList();
+        foreach (var r in allRawLogs)
+        {
+            _rawLogRepository.Delete(r);
+        }
+        await _rawLogRepository.SaveChangesAsync();
     }
 
     public async Task<CheckInResponseDto> CheckInAsync(int employeeId)
@@ -463,15 +472,17 @@ public class AttendanceService : IAttendanceService
             worksheet.Cell(r, 12).Clear(XLClearOptions.Contents); // Description
         }
 
-        int daysDiff = (endDate.DayNumber - startDate.DayNumber) + 1;
+            int daysDiff = (endDate.DayNumber - startDate.DayNumber) + 1;
         if (daysDiff > 31) daysDiff = 31; // Prevent going beyond standard template
 
         for (int i = 0; i < daysDiff; i++)
         {
             var date = startDate.AddDays(i);
-            var row = startRow + date.Day - 1; // Map to the exact day of the month
+            var row = startRow + i; // Write sequentially starting from row 13
             
-            // Do NOT overwrite columns 2 (Day) and 3 (Date) to preserve template formulas
+            // Overwrite columns 2 (Day Name) and 3 (Date) with actual values
+            worksheet.Cell(row, 2).Value = date.ToString("dddd"); // e.g. Monday
+            worksheet.Cell(row, 3).Value = date.ToString("dd-MMM-yy"); // e.g. 30-Jun-26
 
             if (periodAttendances.TryGetValue(date, out var attendance))
             {
@@ -595,9 +606,11 @@ public class AttendanceService : IAttendanceService
             for (int i = 0; i < daysDiff; i++)
             {
                 var date = startDate.AddDays(i);
-                var row = startRow + date.Day - 1; // Map to the exact day of the month
+                var row = startRow + i; // Write sequentially starting from row 13
                 
-                // Do NOT overwrite columns 2 (Day) and 3 (Date) to preserve template formulas
+                // Overwrite columns 2 (Day Name) and 3 (Date) with actual values
+                worksheet.Cell(row, 2).Value = date.ToString("dddd"); // e.g. Monday
+                worksheet.Cell(row, 3).Value = date.ToString("dd-MMM-yy"); // e.g. 30-Jun-26
 
                 if (periodAttendances.TryGetValue(date, out var attendance))
                 {

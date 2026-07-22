@@ -38,7 +38,7 @@ export default function Announcements() {
 
   const fetchAnnouncements = async () => {
     try {
-      const res = await axios.get('https://andrew20x-001-site1.itempurl.com/api/announcements');
+      const res = await axios.get('http://localhost:5222/api/announcements');
       setAnnouncements(res.data);
     } catch (err) {
       console.error(err);
@@ -49,7 +49,7 @@ export default function Announcements() {
 
   const fetchEmployees = async () => {
     try {
-      const res = await axios.get('https://andrew20x-001-site1.itempurl.com/api/employees');
+      const res = await axios.get('http://localhost:5222/api/employees');
       setEmployees(res.data.filter((e: any) => e.isActive && e.email && e.email !== '(No Email)'));
     } catch (err) {
       console.error('Failed to load employees for recipient selector');
@@ -74,7 +74,7 @@ export default function Announcements() {
         targetEmployeeId: sendToAll ? undefined : selectedEmployee?.id
       };
 
-      await axios.post('https://andrew20x-001-site1.itempurl.com/api/Announcements', body);
+      await axios.post('http://localhost:5222/api/Announcements', body);
       setOpen(false);
       setFormData({ title: '', content: '', type: 'Notice' });
       setSelectedEmployee(null);
@@ -96,7 +96,7 @@ export default function Announcements() {
   const handleDelete = async () => {
     if (announcementToDelete === null) return;
     try {
-      await axios.delete(`https://andrew20x-001-site1.itempurl.com/api/announcements/${announcementToDelete}`);
+      await axios.delete(`http://localhost:5222/api/announcements/${announcementToDelete}`);
       setToast({ open: true, message: 'Announcement deleted', severity: 'success' });
       fetchAnnouncements();
       setDeleteConfirmOpen(false);
@@ -148,6 +148,10 @@ export default function Announcements() {
                   </Typography>
                   <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 2 }}>
                     Posted on {new Date(ann.createdAt).toLocaleDateString()}
+                    {' • '}
+                    {ann.targetEmployee 
+                      ? `Sent to: ${ann.targetEmployee.firstName} ${ann.targetEmployee.lastName}` 
+                      : 'Sent to: All Employees'}
                   </Typography>
                 </CardContent>
               </Card>

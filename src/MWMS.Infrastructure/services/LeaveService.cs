@@ -325,7 +325,9 @@ public class LeaveService : ILeaveService
 
         if (!isAdmin && request.EmployeeId != employeeId) return false;
 
-        _leaveRepository.Delete(request);
+        request.IsDeleted = true;
+        request.DeletedAt = DateTime.UtcNow;
+        _leaveRepository.Update(request);
         await _leaveRepository.SaveChangesAsync();
         return true;
     }
@@ -337,7 +339,24 @@ public class LeaveService : ILeaveService
 
         foreach (var leave in employeeLeaves)
         {
-            _leaveRepository.Delete(leave);
+            leave.IsDeleted = true;
+            leave.DeletedAt = DateTime.UtcNow;
+            _leaveRepository.Update(leave);
+        }
+        await _leaveRepository.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> DeleteAllRequestsAsync()
+    {
+        var all = await _leaveRepository.GetAllAsync();
+        var leaves = all.Where(l => !l.IsDeleted).ToList();
+
+        foreach (var leave in leaves)
+        {
+            leave.IsDeleted = true;
+            leave.DeletedAt = DateTime.UtcNow;
+            _leaveRepository.Update(leave);
         }
         await _leaveRepository.SaveChangesAsync();
         return true;

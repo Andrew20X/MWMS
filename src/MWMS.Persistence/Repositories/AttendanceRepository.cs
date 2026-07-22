@@ -34,6 +34,11 @@ public class AttendanceRepository : GenericRepository<Attendance>, IAttendanceRe
     {
          return await _context.Attendances
         .Include(a => a.Employee)
+            .ThenInclude(e => e.Position)
+        .Include(a => a.Employee)
+            .ThenInclude(e => e.Shift)
+        .Include(a => a.Employee)
+            .ThenInclude(e => e.Department)
         .Where(a => a.Date == date)
         .OrderBy(a => a.Employee.FirstName)
         .ToListAsync();
@@ -43,6 +48,11 @@ public class AttendanceRepository : GenericRepository<Attendance>, IAttendanceRe
     {
         return await _context.Attendances
             .Include(a => a.Employee)
+                .ThenInclude(e => e.Position)
+            .Include(a => a.Employee)
+                .ThenInclude(e => e.Shift)
+            .Include(a => a.Employee)
+                .ThenInclude(e => e.Department)
             .Where(a => a.Date >= startDate && a.Date <= endDate)
             .OrderByDescending(a => a.Date)
             .ToListAsync();

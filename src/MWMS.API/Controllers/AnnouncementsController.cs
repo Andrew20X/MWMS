@@ -51,6 +51,7 @@ public class AnnouncementsController : ControllerBase
             Title = body.Title,
             Content = body.Content,
             Type = body.Type ?? "Notice",
+            TargetEmployeeId = body.TargetEmployeeId,
             CreatedAt = DateTime.UtcNow
         };
 

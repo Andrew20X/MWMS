@@ -55,7 +55,7 @@ export default function Employees() {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Employees');
+      const response = await axios.get('http://localhost:5222/api/Employees');
       setEmployees(response.data);
     } catch (err: any) {
       setError('Failed to load employees.');
@@ -82,7 +82,7 @@ export default function Employees() {
     try {
       setBalanceEmployee(employee);
       const currentYear = new Date().getFullYear();
-      const response = await axios.get(`https://andrew20x-001-site1.itempurl.com/api/Leaves/balance/${employee.id}?year=${currentYear}`);
+      const response = await axios.get(`http://localhost:5222/api/Leaves/balance/${employee.id}?year=${currentYear}`);
       setLeaveBalance({
         year: currentYear,
         annualLeaveTotal: response.data.annualLeaveTotal,
@@ -99,7 +99,7 @@ export default function Employees() {
   const handleSaveBalance = async () => {
     if (!balanceEmployee) return;
     try {
-      await axios.put(`https://andrew20x-001-site1.itempurl.com/api/Leaves/balance/${balanceEmployee.id}`, leaveBalance);
+      await axios.put(`http://localhost:5222/api/Leaves/balance/${balanceEmployee.id}`, leaveBalance);
       showMessage('Leave balance updated successfully.', 'success');
       setBalanceDialogOpen(false);
     } catch (err) {
@@ -115,7 +115,7 @@ export default function Employees() {
   const handleDelete = async () => {
     if (employeeToDelete === null) return;
     try {
-      await axios.delete(`https://andrew20x-001-site1.itempurl.com/api/Employees/${employeeToDelete}`);
+      await axios.delete(`http://localhost:5222/api/Employees/${employeeToDelete}`);
       showMessage('Employee deleted successfully', 'success');
       fetchEmployees();
     } catch (err) {
@@ -136,7 +136,7 @@ export default function Employees() {
     try {
       const emp = employees.find(e => e.id === employeeToReset);
       const code = emp?.employeeCode || '';
-      const response = await axios.post(`https://andrew20x-001-site1.itempurl.com/api/Auth/force-reset-password/${employeeToReset}`);
+      const response = await axios.post(`http://localhost:5222/api/Auth/force-reset-password/${employeeToReset}`);
       showMessage(response.data.message ? `Password reset successfully to EMP-SYNC-${code}` : `Password reset successfully to EMP-SYNC-${code}`, 'success');
     } catch (err: any) {
       showMessage(err.response?.data?.message || 'Failed to reset password', 'error');
@@ -150,16 +150,16 @@ export default function Employees() {
     try {
       let currentPosId = newEmployee.positionId;
       if (positionInput.trim()) {
-        const posRes = await axios.post('https://andrew20x-001-site1.itempurl.com/api/Positions/get-or-create', { name: positionInput.trim() });
+        const posRes = await axios.post('http://localhost:5222/api/Positions/get-or-create', { name: positionInput.trim() });
         currentPosId = posRes.data.id;
       }
       
       const payload = { ...newEmployee, positionId: currentPosId, isActive: true };
 
       if (isEditing && editingId) {
-        await axios.put(`https://andrew20x-001-site1.itempurl.com/api/Employees/${editingId}`, payload);
+        await axios.put(`http://localhost:5222/api/Employees/${editingId}`, payload);
       } else {
-        await axios.post('https://andrew20x-001-site1.itempurl.com/api/Employees', payload);
+        await axios.post('http://localhost:5222/api/Employees', payload);
       }
       setOpen(false);
       showMessage('Employee saved successfully', 'success');
@@ -172,7 +172,7 @@ export default function Employees() {
 
   const handleGenerateLogins = async () => {
     try {
-      const response = await axios.post('https://andrew20x-001-site1.itempurl.com/api/Auth/generate-logins');
+      const response = await axios.post('http://localhost:5222/api/Auth/generate-logins');
       showMessage(response.data.message || 'Logins generated successfully', 'success');
     } catch (err: any) {
       showMessage('Failed to generate logins', 'error');

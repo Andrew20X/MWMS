@@ -42,7 +42,7 @@ export default function ResetPassword() {
     setLoading(true);
 
     try {
-      await axios.post('https://andrew20x-001-site1.itempurl.com/api/Auth/reset-password', {
+      await axios.post('http://localhost:5222/api/Auth/reset-password', {
         email,
         token,
         newPassword

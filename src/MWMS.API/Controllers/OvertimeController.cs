@@ -226,18 +226,21 @@ public class OvertimeController : ControllerBase
     public async Task<IActionResult> DeleteOvertime(int id)
     {
         var request = await _overtimeRepository.GetByIdAsync(id);
-        if (request == null) return NotFound();
+        if (request == null || request.IsDeleted) return NotFound();
 
-        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
         var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        var isAdminOrManager = roleClaim == "Admin" || roleClaim == "Manager";
 
-        if (roleClaim != "Admin" && roleClaim != "Manager")
+        if (!isAdminOrManager)
         {
+            var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
             if (employeeIdClaim == null || int.Parse(employeeIdClaim) != request.EmployeeId)
                 return Forbid();
         }
 
-        _overtimeRepository.Delete(request);
+        request.IsDeleted = true;
+        request.DeletedAt = DateTime.UtcNow;
+        _overtimeRepository.Update(request);
         await _overtimeRepository.SaveChangesAsync();
         return Ok();
     }
@@ -245,26 +248,32 @@ public class OvertimeController : ControllerBase
     [HttpDelete("all")]
     public async Task<IActionResult> DeleteAllOvertimes()
     {
-        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
         var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+        var isAdminOrManager = roleClaim == "Admin" || roleClaim == "Manager";
 
-        if (roleClaim == "Admin" || roleClaim == "Manager")
+        if (isAdminOrManager)
         {
             var requests = await _overtimeRepository.GetAllAsync();
-            foreach (var req in requests)
+            foreach (var req in requests.Where(r => !r.IsDeleted))
             {
-                _overtimeRepository.Delete(req);
+                req.IsDeleted = true;
+                req.DeletedAt = DateTime.UtcNow;
+                _overtimeRepository.Update(req);
             }
             await _overtimeRepository.SaveChangesAsync();
         }
         else
         {
+            var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
             if (employeeIdClaim == null) return Unauthorized();
+            
             var employeeId = int.Parse(employeeIdClaim);
             var requests = await _overtimeRepository.GetByEmployeeAsync(employeeId);
-            foreach (var req in requests)
+            foreach (var req in requests.Where(r => !r.IsDeleted))
             {
-                _overtimeRepository.Delete(req);
+                req.IsDeleted = true;
+                req.DeletedAt = DateTime.UtcNow;
+                _overtimeRepository.Update(req);
             }
             await _overtimeRepository.SaveChangesAsync();
         }

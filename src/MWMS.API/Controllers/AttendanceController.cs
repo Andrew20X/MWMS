@@ -161,6 +161,22 @@ public class AttendanceController : ControllerBase
         return Ok(new { Employee = emp, Attendances = attendances });
     }
 
+    [HttpGet("debug-raw/{employeeId}")]
+    [AllowAnonymous]
+    public IActionResult DebugRaw(int employeeId, [FromServices] MWMS.Persistence.Context.AppDbContext db)
+    {
+        var rawLogs = db.RawAttendanceLogs.Where(r => r.EmployeeId == employeeId).OrderByDescending(r => r.PunchTime).ToList();
+        return Ok(rawLogs);
+    }
+
+    [HttpGet("debug-attendances-full/{employeeId}")]
+    [AllowAnonymous]
+    public IActionResult DebugAttendancesFull(int employeeId, [FromServices] MWMS.Persistence.Context.AppDbContext db)
+    {
+        var attendances = db.Attendances.Where(a => a.EmployeeId == employeeId).OrderByDescending(a => a.Date).ToList();
+        return Ok(attendances);
+    }
+
     [HttpPost("import")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ImportTimesheet(IFormFile file)

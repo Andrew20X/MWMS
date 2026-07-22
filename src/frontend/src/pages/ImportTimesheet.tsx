@@ -41,6 +41,9 @@ export default function Timesheets() {
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [fetchingDevice, setFetchingDevice] = useState(false);
+  const [openFetchDialog, setOpenFetchDialog] = useState(false);
+  const [fetchStartDate, setFetchStartDate] = useState(new Date().toISOString().split('T')[0] + 'T00:00');
+  const [fetchEndDate, setFetchEndDate] = useState(new Date().toISOString().split('T')[0] + 'T23:59');
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   
   const [tab, setTab] = useState(0);
@@ -53,7 +56,7 @@ export default function Timesheets() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Attendance/recent', {
+      const res = await axios.get('http://localhost:5222/api/Attendance/recent', {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setLogs(res.data);
@@ -67,7 +70,7 @@ export default function Timesheets() {
   const fetchSubmitted = async () => {
     setLoadingSubmitted(true);
     try {
-      const res = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Attendance/submitted', {
+      const res = await axios.get('http://localhost:5222/api/Attendance/submitted', {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setSubmittedFiles(res.data);
@@ -97,7 +100,7 @@ export default function Timesheets() {
     setMessage(null);
 
     try {
-      const response = await axios.post('https://andrew20x-001-site1.itempurl.com/api/Attendance/import', formData, {
+      const response = await axios.post('http://localhost:5222/api/Attendance/import', formData, {
         headers: { 
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${user?.token}`
@@ -120,11 +123,17 @@ export default function Timesheets() {
     setFetchingDevice(true);
     setMessage(null);
     try {
-      const response = await axios.post('https://andrew20x-001-site1.itempurl.com/api/Attendance/fetch-from-device', {}, {
+      const response = await axios.post('http://localhost:5222/api/Attendance/fetch-from-device', 
+      {
+        startDate: fetchStartDate,
+        endDate: fetchEndDate
+      }, 
+      {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setMessage({ type: 'success', text: response.data.message });
       setTimeout(() => setMessage(null), 4000);
+      setOpenFetchDialog(false);
       fetchLogs();
     } catch (error: any) {
       setMessage({ type: 'error', text: error.response?.data || 'Failed to fetch from device' });
@@ -141,7 +150,7 @@ export default function Timesheets() {
     }
     setExporting(true);
     try {
-      const response = await axios.get(`https://andrew20x-001-site1.itempurl.com/api/Attendance/export/all?startDate=${startDate}&endDate=${endDate}`, {
+      const response = await axios.get(`http://localhost:5222/api/Attendance/export/all?startDate=${startDate}&endDate=${endDate}`, {
         responseType: 'blob', // Important for file downloads
         headers: { Authorization: `Bearer ${user?.token}` }
       });
@@ -185,7 +194,7 @@ export default function Timesheets() {
   const handleClearRaw = async () => {
     setClearingRaw(true);
     try {
-      const response = await axios.delete('https://andrew20x-001-site1.itempurl.com/api/Attendance/raw/all', {
+      const response = await axios.delete('http://localhost:5222/api/Attendance/raw/all', {
         headers: { Authorization: `Bearer ${user?.token}` }
       });
       setMessage({ type: 'success', text: response.data.message || 'All raw data cleared.' });
@@ -203,7 +212,7 @@ export default function Timesheets() {
 
     const handleDownloadSubmitted = async (fileName: string) => {
       try {
-        const res = await axios.get(`https://andrew20x-001-site1.itempurl.com/api/Attendance/submitted/download/${fileName}`, {
+        const res = await axios.get(`http://localhost:5222/api/Attendance/submitted/download/${fileName}`, {
           responseType: 'blob',
           headers: { Authorization: `Bearer ${user?.token}` }
         });
@@ -223,7 +232,7 @@ export default function Timesheets() {
 
     const handleDownloadAllSubmitted = async () => {
       try {
-        const res = await axios.get('https://andrew20x-001-site1.itempurl.com/api/Attendance/submitted/download-all', {
+        const res = await axios.get('http://localhost:5222/api/Attendance/submitted/download-all', {
           responseType: 'blob',
           headers: { Authorization: `Bearer ${user?.token}` }
         });
@@ -267,7 +276,7 @@ export default function Timesheets() {
     setDeleting(true);
     try {
       await Promise.all(filesToDelete.map(fileName => 
-        axios.delete(`https://andrew20x-001-site1.itempurl.com/api/Attendance/submitted/${fileName}`, {
+        axios.delete(`http://localhost:5222/api/Attendance/submitted/${fileName}`, {
           headers: { Authorization: `Bearer ${user?.token}` }
         })
       ));
@@ -310,7 +319,7 @@ export default function Timesheets() {
           <Button variant="outlined" startIcon={<Download size={18} />} onClick={() => setOpenExport(true)}>
             Export
           </Button>
-          <Button variant="contained" color="secondary" onClick={handleFetchDevice} disabled={fetchingDevice}>
+          <Button variant="contained" color="secondary" onClick={() => setOpenFetchDialog(true)} disabled={fetchingDevice}>
             {fetchingDevice ? <CircularProgress size={24} color="inherit" /> : 'Fetch from Device'}
           </Button>
           <Button variant="contained" startIcon={<UploadCloud size={18} />} onClick={() => setOpenImport(true)}>
@@ -543,6 +552,43 @@ export default function Timesheets() {
           <Button onClick={() => setOpenClearRaw(false)}>Cancel</Button>
           <Button onClick={handleClearRaw} variant="contained" color="error" disabled={clearingRaw}>
             {clearingRaw ? <CircularProgress size={24} color="inherit" /> : 'Yes, Clear All Data'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openFetchDialog} onClose={() => setOpenFetchDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Fetch from Device</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              Select a date and time range to fetch attendance logs from the biometric device.
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Start Date & Time</Typography>
+                <input 
+                  type="datetime-local"
+                  value={fetchStartDate} 
+                  onChange={(e) => setFetchStartDate(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc', marginTop: '4px' }}
+                />
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">End Date & Time</Typography>
+                <input 
+                  type="datetime-local"
+                  value={fetchEndDate} 
+                  onChange={(e) => setFetchEndDate(e.target.value)}
+                  style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc', marginTop: '4px' }}
+                />
+              </Box>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button onClick={() => setOpenFetchDialog(false)}>Cancel</Button>
+          <Button onClick={handleFetchDevice} variant="contained" disabled={!fetchStartDate || !fetchEndDate || fetchingDevice}>
+            {fetchingDevice ? <CircularProgress size={24} /> : 'Fetch Logs'}
           </Button>
         </DialogActions>
       </Dialog>
