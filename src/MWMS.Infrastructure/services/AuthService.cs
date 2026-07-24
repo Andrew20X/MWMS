@@ -54,10 +54,20 @@ public class AuthService : IAuthService
             employee = await _employeeRepository.GetByEmailAsync(user.Email);
         }
 
+        var finalRole = user.Role;
+        if (finalRole == "Employee" && employee != null)
+        {
+            var subordinates = await _employeeRepository.GetByManagerIdAsync(employee.Id);
+            if (subordinates.Any())
+            {
+                finalRole = "Manager";
+            }
+        }
+
         var token = _jwtTokenGenerator.GenerateToken(
             user.Id,
             user.Username,
-            user.Role,
+            finalRole,
             employee?.Id);
 
         return new LoginResponse
@@ -65,7 +75,7 @@ public class AuthService : IAuthService
             Token = token,
             Username = user.Username,
             FullName = employee != null ? $"{employee.FirstName} {employee.LastName}".Trim() : user.FullName,
-            Role = user.Role,
+            Role = finalRole,
             PositionName = employee?.Position?.Name ?? user.Role,
             EmployeeId = employee?.Id,
             RequiresPasswordChange = user.Role != "Admin" && (_passwordHasher.Verify(user.Username, user.PasswordHash) || _passwordHasher.Verify("measuresoft", user.PasswordHash))
