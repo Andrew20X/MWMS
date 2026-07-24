@@ -28,6 +28,14 @@ The system provides a robust administrative dashboard alongside dedicated portal
 - 📢 **Company Announcements:** Broadcast important information to the entire workforce directly to their dashboard.
 - ⚙️ **Hardware Integration (ZKTeco):** Designed to bridge and ingest raw attendance punch logs from enterprise fingerprint/biometric devices.
 
+## 🆕 Recent Updates
+
+- 🗑️ **Salary Deductions Management:** Implemented hard delete functionality for salary deductions with cascading cleanup. Added a "Delete All Deductions" bulk action for Admins.
+- 📧 **Automated Email Notifications:** Enhanced `EmailService` to dispatch automated, styled HTML email alerts to employees (e.g., unexpected leaves, deductions) and managers for workflow approvals.
+- 🤖 **Dynamic Role Assignment:** The system now automatically grants the `Manager` role at login for any employee who has active subordinates, ensuring immediate access to the team management portal.
+- 🚀 **CI/CD Pipeline:** Configured GitHub Actions (`deploy.yml`) to automatically build and deploy the React frontend to GitHub Pages on every push to the `main` branch.
+- 🗄️ **Database Integrity & Fixes:** Cleaned up duplicate synchronization accounts to resolve email uniqueness constraints and fortified cascading deletes for attendance records.
+
 ## 🛠️ Technology Stack
 
 This application follows **Clean Architecture** principles, enforcing separation of concerns across Domain, Application, Infrastructure, and Presentation layers.
