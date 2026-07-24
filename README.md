@@ -100,5 +100,5 @@ The backend utilizes Entity Framework Core Migrations to automatically build the
 ---
 
 <div align="center">
-  <i>Built with love by Andrew Raafat for Measuresoft Oil Services (Using Clean Architecture and Modern Web Standards).</i>
+  <i>Built by Andrew Raafat Specially for Measuresoft Oil Services (Using Clean Architecture and Modern Web Standards).</i>
 </div>
