@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>🌟 Measuresoft Workforce Management System (MWMS) 🌟</h1>
+  <h1> Measuresoft Workforce Management System (MWMS) </h1>
   <p><span>An Enterprise-Grade Attendance and Workforce Management Solution</span></p>
 
   [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
@@ -11,32 +11,32 @@
 
 <br />
 
-## 📖 Overview
+##  Overview
 
 **MWMS** is a comprehensive, full-stack workforce management application developed for Measuresoft Oil Services. It is designed to streamline employee tracking, leave requests, attendance logs, and internal communications, effectively replacing legacy paperwork and spreadsheet-based workflows. 
 
 The system provides a robust administrative dashboard alongside dedicated portals for both Managers and Employees, ensuring strict access control and role-based data isolation.
 
-## ✨ Key Features
+##  Key Features
 
-- 🔐 **Secure Role-Based Authentication:** JWT-based session management isolating `Admin`, `Manager`, and `Employee` access.
-- 👥 **Employee Directory & Configuration:** Admins can manage staff profiles, reset passwords, and set precise **Annual & Emergency Leave Balances**.
-- 🏢 **Job Positions Management:** Comprehensive CRUD operations for organizational positions, accurately mapping titles across the workforce dashboard.
-- 📆 **Advanced Leave & Time Off:** Employees can submit RDO/EDO requests. Managers and Admins can approve, reject, and leave feedback.
-- 🕒 **Overtime & Corrections Tracking:** Digitized request systems for missed punches and logged overtime.
-- 📊 **Real-Time Dashboards & Analytics:** "My Insights" portal provides real-time statistics on leave utilization, attendance trends, and pending tasks.
-- 📢 **Company Announcements:** Broadcast important information to the entire workforce directly to their dashboard.
-- ⚙️ **Hardware Integration (ZKTeco):** Designed to bridge and ingest raw attendance punch logs from enterprise fingerprint/biometric devices.
+-  **Secure Role-Based Authentication:** JWT-based session management isolating `Admin`, `Manager`, and `Employee` access.
+-  **Employee Directory & Configuration:** Admins can manage staff profiles, reset passwords, and set precise **Annual & Emergency Leave Balances**.
+-  **Job Positions Management:** Comprehensive CRUD operations for organizational positions, accurately mapping titles across the workforce dashboard.
+-  **Advanced Leave & Time Off:** Employees can submit RDO/EDO requests. Managers and Admins can approve, reject, and leave feedback.
+-  **Overtime & Corrections Tracking:** Digitized request systems for missed punches and logged overtime.
+-  **Real-Time Dashboards & Analytics:** "My Insights" portal provides real-time statistics on leave utilization, attendance trends, and pending tasks.
+-  **Company Announcements:** Broadcast important information to the entire workforce directly to their dashboard.
+-  **Hardware Integration (ZKTeco):** Designed to bridge and ingest raw attendance punch logs from enterprise fingerprint/biometric devices.
 
-## 🆕 Recent Updates
+##  Recent Updates
 
-- 🗑️ **Salary Deductions Management:** Implemented hard delete functionality for salary deductions with cascading cleanup. Added a "Delete All Deductions" bulk action for Admins.
-- 📧 **Automated Email Notifications:** Enhanced `EmailService` to dispatch automated, styled HTML email alerts to employees (e.g., unexpected leaves, deductions) and managers for workflow approvals.
-- 🤖 **Dynamic Role Assignment:** The system now automatically grants the `Manager` role at login for any employee who has active subordinates, ensuring immediate access to the team management portal.
-- 🚀 **CI/CD Pipeline:** Configured GitHub Actions (`deploy.yml`) to automatically build and deploy the React frontend to GitHub Pages on every push to the `main` branch.
-- 🗄️ **Database Integrity & Fixes:** Cleaned up duplicate synchronization accounts to resolve email uniqueness constraints and fortified cascading deletes for attendance records.
+-  **Salary Deductions Management:** Implemented hard delete functionality for salary deductions with cascading cleanup. Added a "Delete All Deductions" bulk action for Admins.
+-  **Automated Email Notifications:** Enhanced `EmailService` to dispatch automated, styled HTML email alerts to employees (e.g., unexpected leaves, deductions) and managers for workflow approvals.
+-  **Dynamic Role Assignment:** The system now automatically grants the `Manager` role at login for any employee who has active subordinates, ensuring immediate access to the team management portal.
+-  **CI/CD Pipeline:** Configured GitHub Actions (`deploy.yml`) to automatically build and deploy the React frontend to GitHub Pages on every push to the `main` branch.
+-  **Database Integrity & Fixes:** Cleaned up duplicate synchronization accounts to resolve email uniqueness constraints and fortified cascading deletes for attendance records.
 
-## 🛠️ Technology Stack
+##  Technology Stack
 
 This application follows **Clean Architecture** principles, enforcing separation of concerns across Domain, Application, Infrastructure, and Presentation layers.
 
@@ -55,7 +55,7 @@ This application follows **Clean Architecture** principles, enforcing separation
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 Follow these instructions to set up the project on your local machine for development and testing purposes.
 
