@@ -20,9 +20,18 @@ public class LeaveRequest : BaseEntity
     public int? ApprovedById { get; set; }
     
     public string? AdminMessage { get; set; }
+
+    // Approval tracking
+    public int? ApprovedByManagerId { get; set; }
+    public int? ApprovedByHRId { get; set; }
+    public DateTime? ManagerApprovalDate { get; set; }
+    public DateTime? HRApprovalDate { get; set; }
     
     // Navigation Properties
     public Employee Employee { get; set; } = null!;
     
     public User? ApprovedBy { get; set; }
+    
+    public int? LinkedAttendanceId { get; set; }
+    public Attendance? LinkedAttendance { get; set; }
 }

@@ -13,6 +13,11 @@ public class UserRepository : GenericRepository<User>, IUserRepository
 
     public async Task<User?> GetByUsernameAsync(string username)
     {
-        return await _dbSet.FirstOrDefaultAsync(x => x.Username == username);
+        return await _dbSet.FirstOrDefaultAsync(x => x.Username == username && !x.IsDeleted);
+    }
+
+    public async Task<IEnumerable<User>> GetByRoleAsync(string role)
+    {
+        return await _dbSet.Where(u => u.Role == role && !u.IsDeleted && u.IsActive).ToListAsync();
     }
 }

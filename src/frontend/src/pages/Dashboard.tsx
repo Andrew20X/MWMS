@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Chip, CircularProgress, Alert, Avatar, Divider, Button, Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
 import { Users, Clock, AlertCircle, CheckCircle2, CalendarDays, ArrowUpRight, Megaphone, X, RefreshCw } from 'lucide-react';
 
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -34,11 +35,13 @@ export default function Dashboard() {
   const [trend, setTrend] = useState<AttendanceTrend[]>([]);
   const [liveList, setLiveList] = useState<LiveAttendance[]>([]);
   const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [pendingAbsences, setPendingAbsences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [openLiveDialog, setOpenLiveDialog] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const refreshLiveActivity = async () => {
     if (!user) return;
@@ -65,6 +68,17 @@ export default function Dashboard() {
       }
     };
 
+    const fetchPendingAbsences = async () => {
+      try {
+        const res = await axios.get('http://localhost:5222/api/Attendance/pending-resolution', {
+          headers: { Authorization: `Bearer ${user?.token}` }
+        });
+        setPendingAbsences(res.data);
+      } catch (err) {
+        console.error("Failed to load pending absences", err);
+      }
+    };
+
     const fetchAdminData = async () => {
       try {
         const [statsRes, trendRes, liveRes] = await Promise.all([
@@ -83,7 +97,8 @@ export default function Dashboard() {
     const loadAll = async () => {
       setLoading(true);
       await fetchAnnouncements();
-      if (user?.role === 'Admin') {
+      await fetchPendingAbsences();
+      if (user?.role === 'Admin' || user?.role === 'HR') {
         await fetchAdminData();
       }
       setLoading(false);
@@ -152,6 +167,50 @@ export default function Dashboard() {
           {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
         </Typography>
       </Box>
+
+      {pendingAbsences.length > 0 && (
+        <Box sx={{ mb: 4 }}>
+          {pendingAbsences.map(absence => (
+            <Alert 
+              key={absence.id}
+              icon={<AlertCircle size={24} color="#FFF" />}
+              sx={{ 
+                borderRadius: 2, 
+                mb: 2,
+                display: 'flex',
+                alignItems: 'center',
+                bgcolor: '#EF4444', // Tailwind red-500
+                color: 'white',
+                boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.4)'
+              }}
+              action={
+                <Button 
+                  color="inherit" 
+                  size="small" 
+                  sx={{ 
+                    border: '1px solid rgba(255,255,255,0.5)', 
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    px: 2,
+                    fontWeight: 600,
+                    '&:hover': { bgcolor: 'rgba(255,255,255,0.15)', borderColor: 'white' }
+                  }}
+                  onClick={() => navigate(`/leaves?linkedAttendanceId=${absence.id}&date=${encodeURIComponent(absence.date)}`)}
+                >
+                  Submit Leave
+                </Button>
+              }
+            >
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Unexcused Absence Detected on {new Date(absence.date).toLocaleDateString()}
+              </Typography>
+              <Typography variant="body2">
+                Please submit a leave request by {new Date(absence.deadlineForLeaveRequest).toLocaleString()} to avoid salary deduction.
+              </Typography>
+            </Alert>
+          ))}
+        </Box>
+      )}
 
       {user?.role === 'Admin' && (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', lg: 'repeat(4, 1fr)' }, gap: { xs: 2, sm: 3 }, mb: { xs: 4, sm: 6 } }}>

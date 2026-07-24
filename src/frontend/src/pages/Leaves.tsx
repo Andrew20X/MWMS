@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { Plus, Check, X, Trash2, History } from 'lucide-react';
 import axios from 'axios';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -89,8 +90,9 @@ const getStatusLabel = (statusLabel: string, status: string): string => {
 export default function Leaves() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'Admin';
+  const isHR = user?.role === 'HR';
   const isManager = user?.role === 'Manager';
-  const canApprove = isAdmin || isManager;
+  const canApprove = isAdmin || isManager || isHR;
 
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,14 +120,40 @@ export default function Leaves() {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   // New leave request dialog
+  const location = useLocation();
   const [open, setOpen] = useState(false);
-  const [newLeave, setNewLeave] = useState({
+  const [newLeave, setNewLeave] = useState<{
+    employeeId: number;
+    type: number;
+    startDate: string;
+    endDate: string;
+    reason: string;
+    linkedAttendanceId?: number | null;
+  }>({
     employeeId: user?.employeeId || 1,
     type: 1,
     startDate: new Date().toISOString().split('T')[0],
     endDate: new Date().toISOString().split('T')[0],
-    reason: ''
+    reason: '',
+    linkedAttendanceId: null
   });
+
+  useEffect(() => {
+    const query = new URLSearchParams(location.search);
+    const linkedAttendanceId = query.get('linkedAttendanceId');
+    const dateStr = query.get('date');
+
+    if (linkedAttendanceId && dateStr) {
+      const formattedDate = new Date(dateStr).toISOString().split('T')[0];
+      setNewLeave(prev => ({
+        ...prev,
+        startDate: formattedDate,
+        endDate: formattedDate,
+        linkedAttendanceId: parseInt(linkedAttendanceId)
+      }));
+      setOpen(true);
+    }
+  }, [location.search]);
 
   // ─── Data Fetching ──────────────────────────────────────────────────────────
 
@@ -133,14 +161,30 @@ export default function Leaves() {
     setLoading(true);
     try {
       let response;
-      if (isAdmin || isManager) {
-        response = await axios.get('http://localhost:5222/api/Leaves/all');
+      let data = [];
+      if (isAdmin || isHR) {
+        response = await axios.get('http://localhost:5222/api/Leaves/all', {
+          headers: { Authorization: `Bearer ${user?.token}` }
+        });
+        data = response.data;
+      } else if (isManager) {
+        const pendingRes = await axios.get('http://localhost:5222/api/Leaves/manager-pending', {
+          headers: { Authorization: `Bearer ${user?.token}` }
+        });
+        const myRes = await axios.get('http://localhost:5222/api/Leaves/me', {
+          headers: { Authorization: `Bearer ${user?.token}` }
+        });
+        const combined = [...pendingRes.data, ...myRes.data];
+        // Deduplicate
+        const unique = new Map(combined.map(item => [item.id, item]));
+        data = Array.from(unique.values());
       } else {
         response = await axios.get('http://localhost:5222/api/Leaves/me', {
           headers: { Authorization: `Bearer ${user?.token}` }
         });
+        data = response.data;
       }
-      setLeaves(response.data);
+      setLeaves(data);
     } catch (err: any) {
       setError('Failed to load leaves.');
     } finally {
@@ -180,6 +224,8 @@ export default function Leaves() {
       await axios.post(`http://localhost:5222/api/Leaves/${actionLeaveId}/${actionType}`, {
         approverId: user?.employeeId ?? 1,
         adminMessage: actionMessage
+      }, {
+        headers: { Authorization: `Bearer ${user?.token}` }
       });
       setActionOpen(false);
       showToast(`Leave request ${actionType === 'approve' ? 'approved' : 'rejected'} successfully.`);
@@ -247,14 +293,14 @@ export default function Leaves() {
     isManager && status === 'PendingManagerApproval';
 
   const canHRApprove = (status: string) =>
-    isAdmin && status === 'PendingHRApproval';
+    (isAdmin || isHR) && status === 'PendingHRApproval';
 
   const canAnyApprove = (status: string) =>
     canManagerApprove(status) || canHRApprove(status);
 
   const canReject = (status: string) => {
     if (isManager) return status === 'PendingManagerApproval';
-    if (isAdmin) return status === 'PendingManagerApproval' || status === 'PendingHRApproval';
+    if (isAdmin || isHR) return status === 'PendingManagerApproval' || status === 'PendingHRApproval';
     return false;
   };
 
@@ -360,9 +406,8 @@ export default function Leaves() {
         </DialogActions>
       </Dialog>
 
-      {/* Title for table */}
       <Typography variant="h6" sx={{ mb: 2 }}>
-        {isAdmin ? 'All Leave Requests' : isManager ? 'Leave Requests (Manager View)' : 'My Leave Requests'}
+        {(isAdmin || isHR) ? 'All Leave Requests' : isManager ? 'Leave Requests (My Leaves & Team Pending)' : 'My Leave Requests'}
       </Typography>
 
       {/* Leaves Table */}

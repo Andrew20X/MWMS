@@ -18,5 +18,7 @@ public class UpdateEmployeeDto
 
     public int ShiftId { get; set; }
 
+    public int? ManagerId { get; set; }
+
     public bool IsActive { get; set; }
 }

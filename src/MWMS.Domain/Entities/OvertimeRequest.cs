@@ -26,5 +26,10 @@ public class OvertimeRequest : BaseEntity
     public string Status { get; set; } = StatusPendingManager;
 
     public string? AdminNote { get; set; }
-}
 
+    // Approval tracking
+    public int? ApprovedByManagerId { get; set; }
+    public int? ApprovedByHRId { get; set; }
+    public DateTime? ManagerApprovalDate { get; set; }
+    public DateTime? HRApprovalDate { get; set; }
+}

@@ -13,6 +13,7 @@ public class LeaveService : ILeaveService
     private readonly IEmailService _emailService;
     private readonly ILeaveBalanceRepository _leaveBalanceRepository;
     private readonly IGenericRepository<ApprovalHistory> _approvalHistoryRepository;
+    private readonly IGenericRepository<Attendance> _attendanceRepository;
 
     public LeaveService(
         IGenericRepository<LeaveRequest> leaveRepository,
@@ -20,7 +21,8 @@ public class LeaveService : ILeaveService
         IGenericRepository<User> userRepository,
         IEmailService emailService,
         ILeaveBalanceRepository leaveBalanceRepository,
-        IGenericRepository<ApprovalHistory> approvalHistoryRepository)
+        IGenericRepository<ApprovalHistory> approvalHistoryRepository,
+        IGenericRepository<Attendance> attendanceRepository)
     {
         _leaveRepository = leaveRepository;
         _employeeRepository = employeeRepository;
@@ -28,6 +30,7 @@ public class LeaveService : ILeaveService
         _emailService = emailService;
         _leaveBalanceRepository = leaveBalanceRepository;
         _approvalHistoryRepository = approvalHistoryRepository;
+        _attendanceRepository = attendanceRepository;
     }
 
     public async Task<LeaveRequestDto> SubmitRequestAsync(CreateLeaveRequestDto dto)
@@ -43,7 +46,8 @@ public class LeaveService : ILeaveService
             StartDate = dto.StartDate,
             EndDate = dto.EndDate,
             Reason = dto.Reason,
-            Status = LeaveStatus.PendingManagerApproval
+            Status = employee.ManagerId.HasValue ? LeaveStatus.PendingManagerApproval : LeaveStatus.PendingHRApproval,
+            LinkedAttendanceId = dto.LinkedAttendanceId
         };
 
         await _leaveRepository.AddAsync(leaveRequest);
@@ -102,6 +106,38 @@ public class LeaveService : ILeaveService
         return result;
     }
 
+    public async Task<IEnumerable<LeaveRequestDto>> GetManagerPendingLeavesAsync(int managerId)
+    {
+        var all = await _leaveRepository.GetAllAsync();
+        var managerLeaves = all.Where(l => l.Status == LeaveStatus.PendingManagerApproval && !l.IsDeleted).ToList();
+
+        var result = new List<LeaveRequestDto>();
+        foreach (var leave in managerLeaves)
+        {
+            var emp = await _employeeRepository.GetByIdAsync(leave.EmployeeId);
+            if (emp != null && emp.ManagerId == managerId)
+                result.Add(MapToDto(leave, emp));
+        }
+
+        return result;
+    }
+
+    public async Task<IEnumerable<LeaveRequestDto>> GetHRPendingLeavesAsync()
+    {
+        var all = await _leaveRepository.GetAllAsync();
+        var hrLeaves = all.Where(l => l.Status == LeaveStatus.PendingHRApproval && !l.IsDeleted).ToList();
+
+        var result = new List<LeaveRequestDto>();
+        foreach (var leave in hrLeaves)
+        {
+            var emp = await _employeeRepository.GetByIdAsync(leave.EmployeeId);
+            if (emp != null)
+                result.Add(MapToDto(leave, emp));
+        }
+
+        return result;
+    }
+
     public async Task<bool> ApproveRequestAsync(int requestId, int approverId, string approverName, string callerRole, string? adminMessage = null)
     {
         var request = await _leaveRepository.GetByIdAsync(requestId);
@@ -117,11 +153,13 @@ public class LeaveService : ILeaveService
 
             request.Status = LeaveStatus.PendingHRApproval;
             request.AdminMessage = adminMessage;
+            request.ApprovedByManagerId = approverId;
+            request.ManagerApprovalDate = DateTime.UtcNow;
             decision = "Approved by Manager";
         }
-        else if (callerRole == "Admin")
+        else if (callerRole == "Admin" || callerRole == "HR")
         {
-            // Admin (HR) can act on PendingHRApproval
+            // Admin/HR can act on PendingHRApproval
             if (request.Status != LeaveStatus.PendingHRApproval)
                 throw new InvalidOperationException("This request is not awaiting HR approval. It must be approved by a Manager first.");
 
@@ -155,8 +193,21 @@ public class LeaveService : ILeaveService
 
             request.Status = LeaveStatus.Approved;
             request.AdminMessage = adminMessage;
-            request.ApprovedById = null; // FK bypass as per existing pattern
+            request.ApprovedById = approverId; 
+            request.ApprovedByHRId = approverId;
+            request.HRApprovalDate = DateTime.UtcNow;
             decision = "Approved by HR";
+
+            // If this leave was linked to an AWOL absence, resolve it
+            if (request.LinkedAttendanceId.HasValue)
+            {
+                var linkedAttendance = await _attendanceRepository.GetByIdAsync(request.LinkedAttendanceId.Value);
+                if (linkedAttendance != null && linkedAttendance.AbsenceResolutionStatus == AbsenceResolutionStatus.PendingResolution)
+                {
+                    linkedAttendance.AbsenceResolutionStatus = AbsenceResolutionStatus.ResolvedWithLeave;
+                    _attendanceRepository.Update(linkedAttendance);
+                }
+            }
         }
         else
         {
@@ -214,7 +265,7 @@ public class LeaveService : ILeaveService
         if (callerRole == "Manager" && request.Status != LeaveStatus.PendingManagerApproval)
             throw new InvalidOperationException("This request is not awaiting Manager approval.");
 
-        if (callerRole == "Admin" && request.Status != LeaveStatus.PendingHRApproval && request.Status != LeaveStatus.PendingManagerApproval)
+        if ((callerRole == "Admin" || callerRole == "HR") && request.Status != LeaveStatus.PendingHRApproval && request.Status != LeaveStatus.PendingManagerApproval)
             throw new InvalidOperationException("This request cannot be rejected at its current stage.");
 
         request.Status = LeaveStatus.Rejected;
@@ -378,7 +429,8 @@ public class LeaveService : ILeaveService
             Status = leave.Status.ToString(),
             StatusLabel = GetStatusLabel(leave.Status),
             AdminMessage = leave.AdminMessage,
-            CreatedAt = leave.CreatedAt
+            CreatedAt = leave.CreatedAt,
+            LinkedAttendanceId = leave.LinkedAttendanceId
         };
     }
 

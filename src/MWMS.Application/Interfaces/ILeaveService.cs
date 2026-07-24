@@ -11,6 +11,10 @@ public interface ILeaveService
 
     Task<IEnumerable<LeaveRequestDto>> GetPendingLeavesAsync();
 
+    Task<IEnumerable<LeaveRequestDto>> GetManagerPendingLeavesAsync(int managerId);
+
+    Task<IEnumerable<LeaveRequestDto>> GetHRPendingLeavesAsync();
+
     Task<IEnumerable<LeaveRequestDto>> GetAllLeavesAsync();
 
     /// <summary>

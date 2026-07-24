@@ -41,6 +41,21 @@ public class EmployeeService : IEmployeeService
 
         await _employeeRepository.AddAsync(employee);
         await _employeeRepository.SaveChangesAsync();
+
+        if (employee.SubordinateIds != null && employee.SubordinateIds.Any())
+        {
+            var allEmployees = await _employeeRepository.GetAllAsync();
+            foreach (var subId in employee.SubordinateIds)
+            {
+                var sub = allEmployees.FirstOrDefault(e => e.Id == subId);
+                if (sub != null)
+                {
+                    sub.ManagerId = employee.Id;
+                }
+            }
+            await _employeeRepository.SaveChangesAsync();
+        }
+
         return employee;
     }
 
@@ -60,9 +75,8 @@ public class EmployeeService : IEmployeeService
         existing.DepartmentId = employee.DepartmentId;
         existing.PositionId = employee.PositionId;
         existing.ShiftId = employee.ShiftId;
+        existing.ManagerId = employee.ManagerId;
         existing.IsActive = employee.IsActive;
-
-        _employeeRepository.Update(existing);
         
         // Also sync the changes to the user account if it exists
         if (!string.IsNullOrEmpty(existing.EmployeeCode))
@@ -73,7 +87,29 @@ public class EmployeeService : IEmployeeService
             {
                 user.Email = existing.Email ?? "";
                 user.FullName = $"{existing.FirstName} {existing.LastName}";
-                _userRepository.Update(user);
+            }
+        }
+
+        var allEmployees = await _employeeRepository.GetAllAsync();
+        var currentSubordinates = allEmployees.Where(e => e.ManagerId == id).ToList();
+        
+        foreach (var sub in currentSubordinates)
+        {
+            if (employee.SubordinateIds == null || !employee.SubordinateIds.Contains(sub.Id))
+            {
+                sub.ManagerId = null;
+            }
+        }
+        
+        if (employee.SubordinateIds != null)
+        {
+            foreach (var subId in employee.SubordinateIds)
+            {
+                var sub = allEmployees.FirstOrDefault(e => e.Id == subId);
+                if (sub != null && sub.ManagerId != id)
+                {
+                    sub.ManagerId = id;
+                }
             }
         }
 

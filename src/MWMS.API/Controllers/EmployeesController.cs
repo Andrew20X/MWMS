@@ -17,9 +17,29 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromServices] MWMS.Persistence.Context.AppDbContext context)
     {
         var employees = await _employeeService.GetAllAsync();
+        var users = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(context.Users);
+
+        foreach(var emp in employees)
+        {
+            var user = users.FirstOrDefault(u => !u.IsDeleted && u.Username == "MANAGER-SYNC-" + emp.EmployeeCode)
+                    ?? users.FirstOrDefault(u => !u.IsDeleted && u.Username == "EMP-SYNC-" + emp.EmployeeCode)
+                    ?? users.FirstOrDefault(u => !u.IsDeleted && !string.IsNullOrEmpty(emp.Email) && u.Email == emp.Email)
+                    ?? users.FirstOrDefault(u => !u.IsDeleted && u.FullName == emp.FirstName + " " + emp.LastName);
+            emp.Role = user?.Role ?? "Employee";
+            emp.Username = user?.Username ?? (emp.Role == "Manager" ? $"MANAGER-SYNC-{emp.EmployeeCode}" : $"EMP-SYNC-{emp.EmployeeCode}");
+            if (emp.Manager != null)
+            {
+                emp.ManagerName = emp.Manager.FirstName + " " + emp.Manager.LastName;
+            }
+            if (emp.Subordinates != null && emp.Subordinates.Any())
+            {
+                emp.SubordinateIds = emp.Subordinates.Select(s => s.Id).ToList();
+                emp.SubordinatesList = string.Join(", ", emp.Subordinates.Select(s => s.FirstName + " " + s.LastName));
+            }
+        }
 
         return Ok(employees);
     }
@@ -31,6 +51,15 @@ public class EmployeesController : ControllerBase
 
         if (employee == null)
             return NotFound();
+
+        var context = HttpContext.RequestServices.GetRequiredService<MWMS.Persistence.Context.AppDbContext>();
+        var user = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(context.Users, u => !u.IsDeleted && u.Username == "MANAGER-SYNC-" + employee.EmployeeCode)
+                ?? await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(context.Users, u => !u.IsDeleted && u.Username == "EMP-SYNC-" + employee.EmployeeCode)
+                ?? await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(context.Users, u => !u.IsDeleted && !string.IsNullOrEmpty(employee.Email) && u.Email == employee.Email)
+                ?? await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(context.Users, u => !u.IsDeleted && u.FullName == employee.FirstName + " " + employee.LastName);
+        
+        employee.Role = user?.Role ?? "Employee";
+        employee.Username = user?.Username ?? (employee.Role == "Manager" ? $"MANAGER-SYNC-{employee.EmployeeCode}" : $"EMP-SYNC-{employee.EmployeeCode}");
 
         return Ok(employee);
     }
@@ -50,6 +79,8 @@ public class EmployeesController : ControllerBase
             DepartmentId = dto.DepartmentId,
             PositionId = dto.PositionId,
             ShiftId = dto.ShiftId,
+            ManagerId = dto.ManagerId,
+            SubordinateIds = dto.SubordinateIds,
             HireDate = DateOnly.FromDateTime(DateTime.UtcNow),
             IsActive = true
         };
@@ -84,6 +115,8 @@ public class EmployeesController : ControllerBase
         employee.DepartmentId = dto.DepartmentId;
         employee.PositionId = dto.PositionId;
         employee.ShiftId = dto.ShiftId;
+        employee.ManagerId = dto.ManagerId;
+        employee.SubordinateIds = dto.SubordinateIds;
 
         try
         {
@@ -101,12 +134,47 @@ public class EmployeesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var deleted = await _employeeService.DeleteAsync(id);
+        var context = HttpContext.RequestServices.GetRequiredService<MWMS.Persistence.Context.AppDbContext>();
+        var employee = await context.Employees.FindAsync(id);
+        if (employee == null) return NotFound();
 
-        if (!deleted)
-            return NotFound();
+        using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            // 1. Delete associated user account(s)
+            var users = context.Users.Where(u => 
+                u.Username == $"MANAGER-SYNC-{employee.EmployeeCode}" ||
+                u.Username == $"EMP-SYNC-{employee.EmployeeCode}" ||
+                (!string.IsNullOrEmpty(employee.Email) && u.Email == employee.Email) ||
+                u.FullName == $"{employee.FirstName} {employee.LastName}");
+            context.Users.RemoveRange(users);
 
-        return NoContent();
+            // 2. Delete all related records to avoid FK constraint errors
+            context.SalaryDeductions.RemoveRange(context.SalaryDeductions.Where(x => x.EmployeeId == id));
+            context.ApprovalHistories.RemoveRange(context.ApprovalHistories.Where(x => x.ApproverId == id));
+            context.LeaveBalances.RemoveRange(context.LeaveBalances.Where(x => x.EmployeeId == id));
+            context.LeaveRequests.RemoveRange(context.LeaveRequests.Where(x => x.EmployeeId == id));
+            context.OvertimeRequests.RemoveRange(context.OvertimeRequests.Where(x => x.EmployeeId == id));
+            context.CorrectionRequests.RemoveRange(context.CorrectionRequests.Where(x => x.EmployeeId == id));
+            context.RawAttendanceLogs.RemoveRange(context.RawAttendanceLogs.Where(x => x.EmployeeId == id));
+            context.Attendances.RemoveRange(context.Attendances.Where(x => x.EmployeeId == id));
+
+            // Set subordinates manager to null
+            var subordinates = context.Employees.Where(e => e.ManagerId == id);
+            foreach(var sub in subordinates) { sub.ManagerId = null; }
+
+            // 3. Finally delete the employee
+            context.Employees.Remove(employee);
+
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return BadRequest(new { error = "Failed to completely delete the employee and their data.", details = ex.Message });
+        }
     }
 
     [HttpPost("import-fb")]

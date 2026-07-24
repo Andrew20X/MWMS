@@ -66,6 +66,26 @@ public class LeavesController : ControllerBase
         return Ok(leaves);
     }
 
+    [HttpGet("manager-pending")]
+    [Authorize(Roles = "Manager,Admin,HR")]
+    public async Task<IActionResult> GetManagerPendingLeaves()
+    {
+        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
+        if (string.IsNullOrEmpty(employeeIdClaim)) return Unauthorized();
+
+        var employeeId = int.Parse(employeeIdClaim);
+        var leaves = await _leaveService.GetManagerPendingLeavesAsync(employeeId);
+        return Ok(leaves);
+    }
+
+    [HttpGet("hr-pending")]
+    [Authorize(Roles = "HR,Admin")]
+    public async Task<IActionResult> GetHRPendingLeaves()
+    {
+        var leaves = await _leaveService.GetHRPendingLeavesAsync();
+        return Ok(leaves);
+    }
+
     [HttpGet("all")]
     public async Task<IActionResult> GetAllLeaves()
     {
@@ -79,7 +99,7 @@ public class LeavesController : ControllerBase
     /// - Admin (HR) → final approval, deducts leave balance.
     /// </summary>
     [HttpPost("{id}/approve")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,Manager,HR")]
     public async Task<IActionResult> ApproveLeave(int id, [FromBody] ActionRequestDto request)
     {
         try
@@ -106,7 +126,7 @@ public class LeavesController : ControllerBase
     /// Reject a leave request. Both Manager and Admin can reject at their respective stages.
     /// </summary>
     [HttpPost("{id}/reject")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,Manager,HR")]
     public async Task<IActionResult> RejectLeave(int id, [FromBody] ActionRequestDto request)
     {
         try
@@ -131,7 +151,7 @@ public class LeavesController : ControllerBase
 
     /// <summary>Returns approval history for a leave request.</summary>
     [HttpGet("{id}/history")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,Manager,HR")]
     public async Task<IActionResult> GetHistory(int id)
     {
         var history = await _leaveService.GetApprovalHistoryAsync(id, "Leave");
@@ -142,7 +162,7 @@ public class LeavesController : ControllerBase
 
     /// <summary>Returns the leave balance for any employee (Admin/Manager only).</summary>
     [HttpGet("balance/{employeeId}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,Manager,HR")]
     public async Task<IActionResult> GetBalance(int employeeId, [FromQuery] int? year = null)
     {
         var targetYear = year ?? DateTime.UtcNow.Year;
@@ -166,7 +186,7 @@ public class LeavesController : ControllerBase
 
     /// <summary>Updates the leave balance for any employee (Admin/Manager only).</summary>
     [HttpPut("balance/{employeeId}")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,Manager,HR")]
     public async Task<IActionResult> UpdateBalance(int employeeId, [FromBody] UpdateLeaveBalanceDto dto)
     {
         try

@@ -26,4 +26,10 @@ public class Attendance : BaseEntity
     public int OvertimeMinutes { get; set; }
 
     public string? Notes { get; set; }
+
+    public bool IsUnexcused { get; set; }
+    
+    public AbsenceResolutionStatus AbsenceResolutionStatus { get; set; } = AbsenceResolutionStatus.None;
+    
+    public DateTime? DeadlineForLeaveRequest { get; set; }
 }

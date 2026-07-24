@@ -197,7 +197,7 @@ export default function Announcements() {
                   color="primary"
                 />
               }
-              label={<Typography variant="body2" sx={{ fontWeight: 400 }}>Send to all employees</Typography>}
+              label={<Typography variant="body2" sx={{ fontWeight: 400 }}>Send to all employees and managers</Typography>}
             />
 
             {!sendToAll && (

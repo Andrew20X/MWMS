@@ -42,6 +42,12 @@ public class AuthService : IAuthService
             var deviceUserId = user.Username.Substring("EMP-SYNC-".Length);
             employee = await _employeeRepository.GetByEmployeeCodeAsync(deviceUserId);
         }
+        
+        if (employee == null && user.Username.StartsWith("MANAGER-SYNC-"))
+        {
+            var deviceUserId = user.Username.Substring("MANAGER-SYNC-".Length);
+            employee = await _employeeRepository.GetByEmployeeCodeAsync(deviceUserId);
+        }
 
         if (employee == null && !string.IsNullOrEmpty(user.Email))
         {
@@ -62,7 +68,7 @@ public class AuthService : IAuthService
             Role = user.Role,
             PositionName = employee?.Position?.Name ?? user.Role,
             EmployeeId = employee?.Id,
-            RequiresPasswordChange = _passwordHasher.Verify(user.Username, user.PasswordHash)
+            RequiresPasswordChange = user.Role != "Admin" && (_passwordHasher.Verify(user.Username, user.PasswordHash) || _passwordHasher.Verify("measuresoft", user.PasswordHash))
         };
     }
 
@@ -102,28 +108,30 @@ public class AuthService : IAuthService
         if (employee == null)
             throw new InvalidOperationException("Employee not found.");
 
-        var username = $"EMP-SYNC-{employee.EmployeeCode}";
-        var user = await _userRepository.GetByUsernameAsync(username) ?? await _userRepository.GetByUsernameAsync(employee.EmployeeCode) ?? await _userRepository.GetByUsernameAsync(employee.Email ?? "");
+        var existingUser = await _userRepository.GetByUsernameAsync($"MANAGER-SYNC-{employee.EmployeeCode}") ?? await _userRepository.GetByUsernameAsync($"EMP-SYNC-{employee.EmployeeCode}") ?? await _userRepository.GetByUsernameAsync(employee.EmployeeCode) ?? await _userRepository.GetByUsernameAsync(employee.Email ?? "");
         
-        if (user == null)
+        var role = existingUser?.Role ?? "Employee";
+        var username = role == "Manager" ? $"MANAGER-SYNC-{employee.EmployeeCode}" : $"EMP-SYNC-{employee.EmployeeCode}";
+
+        if (existingUser == null)
         {
             // Create user if not exists
-            user = new User
+            var user = new User
             {
                 Username = username,
-                PasswordHash = _passwordHasher.Hash(username),
+                PasswordHash = _passwordHasher.Hash("measuresoft"),
                 FullName = $"{employee.FirstName} {employee.LastName}",
                 Email = employee.Email ?? "",
-                Role = "Employee",
+                Role = role,
                 IsActive = true
             };
             await _userRepository.AddAsync(user);
         }
         else
         {
-            user.Username = username;
-            user.PasswordHash = _passwordHasher.Hash(username);
-            _userRepository.Update(user);
+            existingUser.Username = username;
+            existingUser.PasswordHash = _passwordHasher.Hash("measuresoft");
+            _userRepository.Update(existingUser);
         }
         
         await _userRepository.SaveChangesAsync();
@@ -136,18 +144,19 @@ public class AuthService : IAuthService
         {
             if (!string.IsNullOrEmpty(employee.EmployeeCode))
             {
-                var username = $"EMP-SYNC-{employee.EmployeeCode}";
-                var existingUser = await _userRepository.GetByUsernameAsync(username);
+                var existingUser = await _userRepository.GetByUsernameAsync($"MANAGER-SYNC-{employee.EmployeeCode}") ?? await _userRepository.GetByUsernameAsync($"EMP-SYNC-{employee.EmployeeCode}");
+                var role = existingUser?.Role ?? "Employee";
+                var username = role == "Manager" ? $"MANAGER-SYNC-{employee.EmployeeCode}" : $"EMP-SYNC-{employee.EmployeeCode}";
                 
                 if (existingUser == null)
                 {
                     var user = new User
                     {
                         Username = username,
-                        PasswordHash = _passwordHasher.Hash(username),
+                        PasswordHash = _passwordHasher.Hash("measuresoft"),
                         FullName = $"{employee.FirstName} {employee.LastName}",
                         Email = employee.Email ?? "",
-                        Role = "Employee",
+                        Role = role,
                         IsActive = true
                     };
                     await _userRepository.AddAsync(user);

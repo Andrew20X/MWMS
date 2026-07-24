@@ -17,5 +17,5 @@ public class LeaveRequestDto
 
     /// <summary>Human-readable stage label for UI display (e.g. "Pending Manager Approval").</summary>
     public string StatusLabel { get; set; } = string.Empty;
+    public int? LinkedAttendanceId { get; set; }
 }
-

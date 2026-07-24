@@ -15,6 +15,9 @@ public class Employee : BaseEntity
 
     public string LastName { get; set; } = string.Empty;
 
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string Username { get; set; } = string.Empty;
+
     public string? Email { get; set; }
 
     public string? Phone { get; set; }
@@ -30,6 +33,9 @@ public class Employee : BaseEntity
 
     public int ShiftId { get; set; }
 
+    /// <summary>Self-referencing FK to the employee's direct manager.</summary>
+    public int? ManagerId { get; set; }
+
     // Navigation Properties
     public Department Department { get; set; } = null!;
 
@@ -37,6 +43,26 @@ public class Employee : BaseEntity
 
     public Shift Shift { get; set; } = null!;
 
+    /// <summary>The employee's direct manager.</summary>
+    [JsonIgnore]
+    public Employee? Manager { get; set; }
+
+    /// <summary>Employees who report to this employee.</summary>
+    [JsonIgnore]
+    public ICollection<Employee> Subordinates { get; set; } = new List<Employee>();
+
     [JsonIgnore]
     public ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string? Role { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string? ManagerName { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public List<int> SubordinateIds { get; set; } = new List<int>();
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public string? SubordinatesList { get; set; }
 }

@@ -24,9 +24,10 @@ const getOvertimeStatusColor = (status: string): 'success' | 'error' | 'warning'
 export default function Overtime() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'Admin';
+  const isHR = user?.role === 'HR';
   const isManager = user?.role === 'Manager';
 
-  const canApprove = isAdmin || isManager;
+  const canApprove = isAdmin || isManager || isHR;
   const [overtimes, setOvertimes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -44,9 +45,29 @@ export default function Overtime() {
 
   const fetchData = async () => {
     try {
-      const url = canApprove ? 'http://localhost:5222/api/overtime' : 'http://localhost:5222/api/overtime/me';
-      const res = await axios.get(url);
-      setOvertimes(res.data);
+      let data = [];
+      if (isAdmin || isHR) {
+        const res = await axios.get('http://localhost:5222/api/overtime', {
+          headers: { Authorization: `Bearer ${user?.token}` }
+        });
+        data = res.data;
+      } else if (isManager) {
+        const pendingRes = await axios.get('http://localhost:5222/api/overtime/manager-pending', {
+          headers: { Authorization: `Bearer ${user?.token}` }
+        });
+        const myRes = await axios.get('http://localhost:5222/api/overtime/me', {
+          headers: { Authorization: `Bearer ${user?.token}` }
+        });
+        const combined = [...pendingRes.data, ...myRes.data];
+        const unique = new Map(combined.map(item => [item.id, item]));
+        data = Array.from(unique.values());
+      } else {
+        const res = await axios.get('http://localhost:5222/api/overtime/me', {
+          headers: { Authorization: `Bearer ${user?.token}` }
+        });
+        data = res.data;
+      }
+      setOvertimes(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -67,10 +88,12 @@ export default function Overtime() {
       if (!confirmDialog.id) return;
 
       if (confirmDialog.action === 'delete') {
-        await axios.delete(`http://localhost:5222/api/overtime/${confirmDialog.id}`);
+        await axios.delete(`http://localhost:5222/api/overtime/${confirmDialog.id}`, {
+          headers: { Authorization: `Bearer ${user?.token}` }
+        });
       } else {
         await axios.put(`http://localhost:5222/api/overtime/${confirmDialog.id}/${confirmDialog.action}`, `"${confirmDialog.note}"`, {
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${user?.token}` }
         });
       }
       setConfirmDialog({ open: false, id: null, action: 'approve', note: '' });
@@ -113,7 +136,7 @@ export default function Overtime() {
     <Box>
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 'normal', color: '#1E293B', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
-          {canApprove ? 'Overtime Requests' : 'My Overtime'}
+          {(isAdmin || isHR) ? 'All Overtime Requests' : isManager ? 'Overtime Requests (My Overtime & Team Pending)' : 'My Overtime'}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
           <Button variant="outlined" color="error" startIcon={<Trash2 size={18} />} onClick={() => setConfirmDialog({ open: true, id: -1, action: 'delete_all', note: '' })} sx={{ width: { xs: '100%', sm: 'auto' } }}>
@@ -147,7 +170,7 @@ export default function Overtime() {
                     {req.status === 'Approved' ? <Check /> : req.status === 'Rejected' ? <X /> : <Clock />}
                   </Avatar>
                   <Box>
-                    {isAdmin && (
+                    {(isAdmin || isHR || isManager) && req.employee && (
                       <Typography variant="subtitle1" sx={{ fontWeight: 'normal' }}>
                         {req.employee?.firstName} {req.employee?.lastName} ({req.employee?.employeeCode})
                       </Typography>
@@ -174,8 +197,8 @@ export default function Overtime() {
                     sx={{ fontWeight: 'normal', fontSize: '0.7rem' }}
                   />
                   {((isManager && req.status === 'PendingManagerApproval') ||
-                    (isAdmin && req.status === 'PendingHRApproval') ||
-                    (isAdmin && req.status === 'PendingManagerApproval')) && (
+                    ((isAdmin || isHR) && req.status === 'PendingHRApproval') ||
+                    ((isAdmin || isHR) && req.status === 'PendingManagerApproval')) && (
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       {(isManager ? req.status === 'PendingManagerApproval' : req.status === 'PendingHRApproval') && (
                         <Button variant="outlined" color="success" size="small" onClick={() => setConfirmDialog({ open: true, id: req.id, action: 'approve', note: '' })}>

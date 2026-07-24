@@ -4,6 +4,7 @@ using MWMS.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MWMS.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260722203534_AddAuditLogs")]
+    partial class AddAuditLogs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -133,9 +136,6 @@ namespace MWMS.Persistence.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AbsenceResolutionStatus")
-                        .HasColumnType("int");
-
                     b.Property<TimeOnly?>("CheckIn")
                         .HasColumnType("time");
 
@@ -148,9 +148,6 @@ namespace MWMS.Persistence.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
-                    b.Property<DateTime?>("DeadlineForLeaveRequest")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
@@ -161,9 +158,6 @@ namespace MWMS.Persistence.Migrations
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsUnexcused")
                         .HasColumnType("bit");
 
                     b.Property<int>("LateMinutes")
@@ -482,9 +476,6 @@ namespace MWMS.Persistence.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("LinkedAttendanceId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("ManagerApprovalDate")
                         .HasColumnType("datetime2");
 
@@ -509,8 +500,6 @@ namespace MWMS.Persistence.Migrations
                     b.HasIndex("ApprovedById");
 
                     b.HasIndex("EmployeeId");
-
-                    b.HasIndex("LinkedAttendanceId");
 
                     b.ToTable("LeaveRequests");
                 });
@@ -649,61 +638,6 @@ namespace MWMS.Persistence.Migrations
                     b.HasIndex("EmployeeId");
 
                     b.ToTable("RawAttendanceLogs");
-                });
-
-            modelBuilder.Entity("MWMS.Domain.Entities.SalaryDeduction", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("AppliedOnDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<decimal>("DeductionAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Reason")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("RejectionDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("RejectionReason")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("RelatedAttendanceId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EmployeeId");
-
-                    b.HasIndex("RelatedAttendanceId");
-
-                    b.ToTable("SalaryDeductions");
                 });
 
             modelBuilder.Entity("MWMS.Domain.Entities.Shift", b =>
@@ -913,15 +847,9 @@ namespace MWMS.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("MWMS.Domain.Entities.Attendance", "LinkedAttendance")
-                        .WithMany()
-                        .HasForeignKey("LinkedAttendanceId");
-
                     b.Navigation("ApprovedBy");
 
                     b.Navigation("Employee");
-
-                    b.Navigation("LinkedAttendance");
                 });
 
             modelBuilder.Entity("MWMS.Domain.Entities.OvertimeRequest", b =>
@@ -944,25 +872,6 @@ namespace MWMS.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Employee");
-                });
-
-            modelBuilder.Entity("MWMS.Domain.Entities.SalaryDeduction", b =>
-                {
-                    b.HasOne("MWMS.Domain.Entities.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MWMS.Domain.Entities.Attendance", "RelatedAttendance")
-                        .WithMany()
-                        .HasForeignKey("RelatedAttendanceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
-
-                    b.Navigation("RelatedAttendance");
                 });
 
             modelBuilder.Entity("MWMS.Domain.Entities.Department", b =>

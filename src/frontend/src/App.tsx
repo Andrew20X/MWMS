@@ -15,6 +15,7 @@ import MyTimesheet from './pages/MyTimesheet';
 import Reports from './pages/Reports';
 import Overtime from './pages/Overtime';
 import MyInsights from './pages/MyInsights';
+import Deductions from './pages/Deductions';
 
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -45,6 +46,7 @@ function App() {
                 <Route path="/my-timesheet" element={<MyTimesheet />} />
                 <Route path="/my-insights" element={<MyInsights />} />
                 <Route path="/reports" element={<Reports />} />
+                <Route path="/deductions" element={<Deductions />} />
               </Route>
             </Route>
 

@@ -18,6 +18,7 @@ public class EmployeeRepository : GenericRepository<Employee>, IEmployeeReposito
             .Include(e => e.Department)
             .Include(e => e.Position)
             .Include(e => e.Shift)
+            .Include(e => e.Manager)
             .FirstOrDefaultAsync(e => e.EmployeeCode == employeeCode);
     }
 
@@ -27,6 +28,7 @@ public class EmployeeRepository : GenericRepository<Employee>, IEmployeeReposito
             .Include(e => e.Department)
             .Include(e => e.Position)
             .Include(e => e.Shift)
+            .Include(e => e.Manager)
             .FirstOrDefaultAsync(e => e.DeviceUserId == deviceUserId);
     }
 
@@ -36,6 +38,7 @@ public class EmployeeRepository : GenericRepository<Employee>, IEmployeeReposito
             .Include(e => e.Department)
             .Include(e => e.Position)
             .Include(e => e.Shift)
+            .Include(e => e.Manager)
             .FirstOrDefaultAsync(e => e.Email == email);
     }
 
@@ -45,6 +48,8 @@ public class EmployeeRepository : GenericRepository<Employee>, IEmployeeReposito
             .Include(e => e.Department)
             .Include(e => e.Position)
             .Include(e => e.Shift)
+            .Include(e => e.Manager)
+            .Include(e => e.Subordinates)
             .ToListAsync();
     }
 
@@ -54,7 +59,18 @@ public class EmployeeRepository : GenericRepository<Employee>, IEmployeeReposito
             .Include(e => e.Department)
             .Include(e => e.Position)
             .Include(e => e.Shift)
+            .Include(e => e.Manager)
             .FirstOrDefaultAsync(e => e.Id == id);
+    }
+
+    public async Task<IEnumerable<Employee>> GetByManagerIdAsync(int managerId)
+    {
+        return await _context.Employees
+            .Include(e => e.Department)
+            .Include(e => e.Position)
+            .Include(e => e.Shift)
+            .Where(e => e.ManagerId == managerId && !e.IsDeleted)
+            .ToListAsync();
     }
 
     public async Task<string?> ValidateReferencesAsync(int departmentId, int positionId, int shiftId)

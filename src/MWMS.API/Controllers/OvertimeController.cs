@@ -48,8 +48,11 @@ public class OvertimeController : ControllerBase
         if (employeeIdClaim == null) return Unauthorized();
 
         var employeeId = int.Parse(employeeIdClaim);
+        var employee = await _employeeRepository.GetByIdAsync(employeeId);
+        if (employee == null) return Unauthorized();
+
         request.EmployeeId = employeeId;
-        request.Status = OvertimeRequest.StatusPendingManager; // Starts at Manager stage
+        request.Status = employee.ManagerId.HasValue ? OvertimeRequest.StatusPendingManager : OvertimeRequest.StatusPendingHR;
         request.CreatedAt = DateTime.UtcNow;
 
         await _overtimeRepository.AddAsync(request);
@@ -58,11 +61,52 @@ public class OvertimeController : ControllerBase
         return Ok(request);
     }
 
+    [HttpGet("manager-pending")]
+    [Authorize(Roles = "Manager,Admin,HR")]
+    public async Task<IActionResult> GetManagerPendingOvertime()
+    {
+        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
+        if (string.IsNullOrEmpty(employeeIdClaim)) return Unauthorized();
+
+        var employeeId = int.Parse(employeeIdClaim);
+        var all = await _overtimeRepository.GetAllAsync();
+        var pending = all.Where(r => r.Status == OvertimeRequest.StatusPendingManager && !r.IsDeleted).ToList();
+
+        var result = new List<OvertimeRequest>();
+        foreach (var req in pending)
+        {
+            var emp = await _employeeRepository.GetByIdAsync(req.EmployeeId);
+            if (emp != null && emp.ManagerId == employeeId)
+            {
+                req.Employee = emp;
+                result.Add(req);
+            }
+        }
+        return Ok(result);
+    }
+
+    [HttpGet("hr-pending")]
+    [Authorize(Roles = "HR,Admin")]
+    public async Task<IActionResult> GetHRPendingOvertime()
+    {
+        var all = await _overtimeRepository.GetAllAsync();
+        var hrPending = all.Where(r => r.Status == OvertimeRequest.StatusPendingHR && !r.IsDeleted).ToList();
+        foreach (var req in hrPending)
+        {
+            req.Employee = await _employeeRepository.GetByIdAsync(req.EmployeeId);
+        }
+        return Ok(hrPending);
+    }
+
     [HttpGet]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,Manager,HR")]
     public async Task<IActionResult> GetAllOvertimeRequests()
     {
         var requests = await _overtimeRepository.GetAllAsync();
+        foreach (var req in requests)
+        {
+            req.Employee = await _employeeRepository.GetByIdAsync(req.EmployeeId);
+        }
         return Ok(requests);
     }
 
@@ -72,7 +116,7 @@ public class OvertimeController : ControllerBase
     /// - Admin (HR) → fully approved.
     /// </summary>
     [HttpPut("{id}/approve")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,Manager,HR")]
     public async Task<IActionResult> ApproveOvertime(int id, [FromBody] string? adminNote)
     {
         var request = await _overtimeRepository.GetByIdAsync(id);
@@ -93,6 +137,8 @@ public class OvertimeController : ControllerBase
                 return BadRequest(new { error = "This request is not awaiting Manager approval." });
 
             request.Status = OvertimeRequest.StatusPendingHR;
+            request.ApprovedByManagerId = callerId;
+            request.ManagerApprovalDate = DateTime.UtcNow;
             decision = "Approved by Manager";
         }
         else // Admin (HR)
@@ -101,6 +147,8 @@ public class OvertimeController : ControllerBase
                 return BadRequest(new { error = "This request must be approved by a Manager first." });
 
             request.Status = OvertimeRequest.StatusApproved;
+            request.ApprovedByHRId = callerId;
+            request.HRApprovalDate = DateTime.UtcNow;
             decision = "Approved by HR";
         }
 
@@ -144,7 +192,7 @@ public class OvertimeController : ControllerBase
 
     /// <summary>Reject an overtime request at any stage. Both Manager and Admin can reject.</summary>
     [HttpPut("{id}/reject")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,Manager,HR")]
     public async Task<IActionResult> RejectOvertime(int id, [FromBody] string? adminNote)
     {
         var request = await _overtimeRepository.GetByIdAsync(id);
@@ -161,7 +209,7 @@ public class OvertimeController : ControllerBase
         if (callerRole == "Manager" && request.Status != OvertimeRequest.StatusPendingManager)
             return BadRequest(new { error = "This request is not awaiting Manager approval." });
 
-        if (callerRole == "Admin" &&
+        if ((callerRole == "Admin" || callerRole == "HR") &&
             request.Status != OvertimeRequest.StatusPendingHR &&
             request.Status != OvertimeRequest.StatusPendingManager)
             return BadRequest(new { error = "This request cannot be rejected at its current stage." });
@@ -203,7 +251,7 @@ public class OvertimeController : ControllerBase
 
     /// <summary>Returns approval history for an overtime request.</summary>
     [HttpGet("{id}/history")]
-    [Authorize(Roles = "Admin,Manager")]
+    [Authorize(Roles = "Admin,Manager,HR")]
     public async Task<IActionResult> GetHistory(int id)
     {
         var allHistory = await _approvalHistoryRepository.GetAllAsync();

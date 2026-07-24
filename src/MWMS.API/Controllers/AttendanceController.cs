@@ -84,6 +84,24 @@ public class AttendanceController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("pending-resolution")]
+    public async Task<IActionResult> GetPendingResolution([FromServices] MWMS.Persistence.Context.AppDbContext db)
+    {
+        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
+        if (employeeIdClaim == null) return Unauthorized();
+
+        var employeeId = int.Parse(employeeIdClaim);
+        
+        var pendingAbsences = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            System.Linq.Queryable.Where(db.Attendances, a => 
+                a.EmployeeId == employeeId && 
+                a.Status == MWMS.Domain.Enums.AttendanceStatus.Absent && 
+                a.AbsenceResolutionStatus == MWMS.Domain.Enums.AbsenceResolutionStatus.PendingResolution)
+        );
+
+        return Ok(pendingAbsences);
+    }
+
     [HttpDelete("me")]
     public async Task<IActionResult> DeleteMyAttendance([FromServices] MWMS.Persistence.Context.AppDbContext db)
     {

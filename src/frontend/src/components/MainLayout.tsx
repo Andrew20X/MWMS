@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, AppBar, Toolbar, Button, IconButton } from '@mui/material';
-import { LayoutDashboard, FileSpreadsheet, Users, LogOut, Menu, Calendar, KeyRound, Bell, CheckSquare, Clock, BarChart, Home, LineChart } from 'lucide-react';
+import { LayoutDashboard, FileSpreadsheet, Users, LogOut, Menu, Calendar, KeyRound, Bell, CheckSquare, Clock, BarChart, Home, LineChart, AlertCircle } from 'lucide-react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import ChangePasswordModal from './ChangePasswordModal';
@@ -23,34 +23,39 @@ export default function MainLayout() {
   };
 
   const isAdmin = user?.role === 'Admin';
+  const isHR = user?.role === 'HR';
+  const isManager = user?.role === 'Manager';
+  const isManagement = isAdmin || isHR || isManager;
+  const isHRAdmin = isAdmin || isHR;
 
   const drawerContent = (
     <>
       <Toolbar />
       <Box sx={{ overflow: 'auto', mt: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
         <List sx={{ flexGrow: 1 }}>
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/" onClick={() => setMobileOpen(false)}>
-                <ListItemIcon><LayoutDashboard color="#48657B" /></ListItemIcon>
-                <ListItemText primary={isAdmin ? "Dashboard" : "Notice Board"} />
-              </ListItemButton>
-            </ListItem>
-          
-          {isAdmin && (
+          <ListItem disablePadding>
+            <ListItemButton component={Link} to="/" onClick={() => setMobileOpen(false)}>
+              <ListItemIcon><LayoutDashboard color="#48657B" /></ListItemIcon>
+              <ListItemText primary={isAdmin ? "Dashboard" : "Notice Board"} />
+            </ListItemButton>
+          </ListItem>
+
+          {isHRAdmin && (
             <>
               <ListItem disablePadding>
                 <ListItemButton component={Link} to="/employees" onClick={() => setMobileOpen(false)}>
                   <ListItemIcon><Users color="#48657B" /></ListItemIcon>
-                  <ListItemText primary="Employees" />
+                  <ListItemText primary="Employees & Subordinates" />
                 </ListItemButton>
               </ListItem>
-              <ListItem disablePadding>
-                <ListItemButton component={Link} to="/timesheet" onClick={() => setMobileOpen(false)}>
-                  <ListItemIcon><FileSpreadsheet color="#48657B" /></ListItemIcon>
-                  <ListItemText primary="Timesheets & Excel" />
-                </ListItemButton>
-              </ListItem>
-
+              {isAdmin && (
+                <ListItem disablePadding>
+                  <ListItemButton component={Link} to="/timesheet" onClick={() => setMobileOpen(false)}>
+                    <ListItemIcon><FileSpreadsheet color="#48657B" /></ListItemIcon>
+                    <ListItemText primary="Timesheets & Excel" />
+                  </ListItemButton>
+                </ListItem>
+              )}
               <ListItem disablePadding>
                 <ListItemButton component={Link} to="/announcements" onClick={() => setMobileOpen(false)}>
                   <ListItemIcon><Bell color="#48657B" /></ListItemIcon>
@@ -83,12 +88,14 @@ export default function MainLayout() {
             </>
           )}
 
-          <ListItem disablePadding>
-            <ListItemButton component={Link} to="/corrections" onClick={() => setMobileOpen(false)}>
-              <ListItemIcon><CheckSquare color="#48657B" /></ListItemIcon>
-              <ListItemText primary="Corrections" />
-            </ListItemButton>
-          </ListItem>
+          {!isManagement && (
+            <ListItem disablePadding>
+              <ListItemButton component={Link} to="/corrections" onClick={() => setMobileOpen(false)}>
+                <ListItemIcon><CheckSquare color="#48657B" /></ListItemIcon>
+                <ListItemText primary="Corrections" />
+              </ListItemButton>
+            </ListItem>
+          )}
 
           <ListItem disablePadding>
             <ListItemButton component={Link} to="/overtime" onClick={() => setMobileOpen(false)}>
@@ -101,6 +108,13 @@ export default function MainLayout() {
             <ListItemButton component={Link} to="/leaves" onClick={() => setMobileOpen(false)}>
               <ListItemIcon><Calendar color="#48657B" /></ListItemIcon>
               <ListItemText primary="Leaves" />
+            </ListItemButton>
+          </ListItem>
+
+          <ListItem disablePadding>
+            <ListItemButton component={Link} to="/deductions" onClick={() => setMobileOpen(false)}>
+              <ListItemIcon><AlertCircle color="#48657B" /></ListItemIcon>
+              <ListItemText primary="Deductions" />
             </ListItemButton>
           </ListItem>
         </List>
@@ -124,14 +138,16 @@ export default function MainLayout() {
             </IconButton>
             <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Measuresoft Logo" style={{ height: '45px', objectFit: 'contain' }} />
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
-            <Typography variant="body2" sx={{ fontWeight: 'normal', display: { xs: 'none', sm: 'block' }, color: 'text.primary' }}>{user?.fullName || user?.username} ({user?.positionName || user?.role})</Typography>
-            
-            <Button color="primary" variant="outlined" size="small" startIcon={<KeyRound size={16} />} onClick={() => setPasswordModalOpen(true)} sx={{ minWidth: { xs: 'auto', sm: '150px' }, p: { xs: '6px', sm: '5px 15px' } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 2.5, sm: 2 } }}>
+            <Typography variant="body2" sx={{ fontWeight: 'normal', display: { xs: 'none', sm: 'block' }, color: 'text.primary' }}>
+              {user?.fullName || user?.username} ({user?.role}{user?.positionName && user?.positionName !== user?.role && user?.positionName !== 'Employee' ? ` - ${user?.positionName}` : ''})
+            </Typography>
+
+            <Button color="primary" variant="outlined" size="small" startIcon={<KeyRound size={18} />} onClick={() => setPasswordModalOpen(true)} sx={{ minWidth: { xs: 'auto', sm: '150px' }, p: { xs: '10px 14px', sm: '5px 15px' }, '& .MuiButton-startIcon': { mr: { xs: 0, sm: 1 }, ml: { xs: 0, sm: -0.5 } } }}>
               <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Change Password</Box>
             </Button>
-            
-            <Button color="error" variant="outlined" size="small" startIcon={<LogOut size={16} />} onClick={handleLogout} sx={{ minWidth: { xs: 'auto', sm: '100px' }, p: { xs: '6px', sm: '5px 15px' } }}>
+
+            <Button color="error" variant="outlined" size="small" startIcon={<LogOut size={18} />} onClick={handleLogout} sx={{ minWidth: { xs: 'auto', sm: '100px' }, p: { xs: '10px 14px', sm: '5px 15px' }, '& .MuiButton-startIcon': { mr: { xs: 0, sm: 1 }, ml: { xs: 0, sm: -0.5 } } }}>
               <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Logout</Box>
             </Button>
           </Box>
@@ -153,7 +169,7 @@ export default function MainLayout() {
         >
           {drawerContent}
         </Drawer>
-        
+
         <Drawer
           variant="permanent"
           sx={{

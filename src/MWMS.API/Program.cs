@@ -40,6 +40,11 @@ builder.Services.AddAuthorization();
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddInfrastructure();
 builder.Services.AddScoped<MWMS.API.Services.IZKTecoService, MWMS.API.Services.ZKTecoService>();
+
+// Register background jobs
+builder.Services.AddHostedService<MWMS.API.Jobs.EndOfDayAbsenceDetectorJob>();
+builder.Services.AddHostedService<MWMS.API.Jobs.DeductionEnforcerJob>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

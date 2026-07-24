@@ -5,7 +5,7 @@ import axios from 'axios';
 interface User {
   username: string;
   fullName?: string;
-  role: 'Admin' | 'Manager' | 'Employee';
+  role: 'Admin' | 'Manager' | 'HR' | 'Employee';
   positionName?: string;
   token: string;
   employeeId?: number;

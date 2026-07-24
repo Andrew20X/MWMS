@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Typography, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, InputAdornment } from '@mui/material';
-import { Plus, Trash2, Edit2, Key, Search, Calendar } from 'lucide-react';
+import { Typography, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, InputAdornment, Autocomplete, IconButton } from '@mui/material';
+import { Plus, Trash2, Edit2, Key, Search, Calendar, UserCog, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Employee {
   id: number;
@@ -12,9 +13,17 @@ interface Employee {
   departmentId: number;
   positionId: number;
   position?: { id: number; name: string };
+  role?: string;
+  username?: string;
+  managerId?: number | null;
+  managerName?: string;
+  subordinateIds?: number[];
+  subordinatesList?: string;
 }
 
 export default function Employees() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'Admin';
   const [employees, setEmployees] = useState<Employee[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -31,7 +40,9 @@ export default function Employees() {
     deviceUserId: 0,
     departmentId: 1,
     positionId: 1,
-    shiftId: 1
+    shiftId: 1,
+    managerId: null as number | null,
+    subordinateIds: [] as number[]
   };
   const [newEmployee, setNewEmployee] = useState(defaultEmployeeState);
   const [isEditing, setIsEditing] = useState(false);
@@ -42,11 +53,26 @@ export default function Employees() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<number | null>(null);
 
+  const [editUserOpen, setEditUserOpen] = useState(false);
+  const [editUserLoading, setEditUserLoading] = useState(false);
+  const [editUserForm, setEditUserForm] = useState({
+    username: '',
+    password: '',
+    fullName: '',
+    email: '',
+    employeeCode: '',
+    positionName: '',
+    role: 'Employee',
+    managerId: null as number | null,
+    subordinateIds: [] as number[]
+  });
+  const [showEditUserPassword, setShowEditUserPassword] = useState(false);
+
   const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
   const [balanceEmployee, setBalanceEmployee] = useState<Employee | null>(null);
-  const [leaveBalance, setLeaveBalance] = useState({ 
-    year: new Date().getFullYear(), 
-    annualLeaveTotal: 15, 
+  const [leaveBalance, setLeaveBalance] = useState({
+    year: new Date().getFullYear(),
+    annualLeaveTotal: 15,
     annualLeaveUsed: 0,
     emergencyLeaveTotal: 6,
     emergencyLeaveUsed: 0
@@ -134,10 +160,8 @@ export default function Employees() {
   const handleResetPassword = async () => {
     if (employeeToReset === null) return;
     try {
-      const emp = employees.find(e => e.id === employeeToReset);
-      const code = emp?.employeeCode || '';
-      const response = await axios.post(`http://localhost:5222/api/Auth/force-reset-password/${employeeToReset}`);
-      showMessage(response.data.message ? `Password reset successfully to EMP-SYNC-${code}` : `Password reset successfully to EMP-SYNC-${code}`, 'success');
+      await axios.post(`http://localhost:5222/api/Auth/force-reset-password/${employeeToReset}`);
+      showMessage('Password reset successfully to measuresoft', 'success');
     } catch (err: any) {
       showMessage(err.response?.data?.message || 'Failed to reset password', 'error');
     } finally {
@@ -153,7 +177,7 @@ export default function Employees() {
         const posRes = await axios.post('http://localhost:5222/api/Positions/get-or-create', { name: positionInput.trim() });
         currentPosId = posRes.data.id;
       }
-      
+
       const payload = { ...newEmployee, positionId: currentPosId, isActive: true };
 
       if (isEditing && editingId) {
@@ -196,20 +220,75 @@ export default function Employees() {
       firstName: employee.firstName,
       lastName: employee.lastName,
       email: employee.email || '',
-      positionId: employee.positionId || 1
+      positionId: employee.positionId || 1,
+      managerId: employee.managerId || null,
+      subordinateIds: employee.subordinateIds || []
     });
     setPositionInput(employee.position?.name || '');
     setOpen(true);
   };
 
+  const openEditUserDialog = async (employee: Employee) => {
+    setEditingId(employee.id);
+    setEditUserLoading(true);
+    setEditUserOpen(true);
+    try {
+      // First, get the latest employee details
+      const empRes = await axios.get(`http://localhost:5222/api/Employees/${employee.id}`);
+      const emp = empRes.data;
+
+      // Determine username
+      let currentUsername = emp.username || (emp.role === 'Manager' ? `MANAGER-SYNC-${emp.employeeCode}` : `EMP-SYNC-${emp.employeeCode}`);
+
+      // Look up user info using the users list or endpoint (but we don't have a GET /api/users/{id} yet, so we'll use best effort from employee table)
+      setEditUserForm({
+        username: currentUsername,
+        password: '',
+        fullName: `${emp.firstName} ${emp.lastName}`,
+        email: emp.email || '',
+        employeeCode: emp.employeeCode || '',
+        positionName: emp.position?.name || '',
+        role: employee.role || 'Employee', // from table data
+        managerId: emp.managerId || null,
+        subordinateIds: employees.filter(e => e.managerId === employee.id).map(e => e.id)
+      });
+    } catch (err: any) {
+      showMessage('Failed to load employee details.', 'error');
+      setEditUserOpen(false);
+    } finally {
+      setEditUserLoading(false);
+    }
+  };
+
+  const handleSaveEditUser = async () => {
+    if (!editingId) return;
+    setEditUserLoading(true);
+    try {
+      await axios.put(`http://localhost:5222/api/Users/${editingId}`, editUserForm);
+      showMessage('User account updated successfully.', 'success');
+      setEditUserOpen(false);
+      fetchEmployees();
+    } catch (err: any) {
+      showMessage(err.response?.data?.error || 'Failed to update user account.', 'error');
+    } finally {
+      setEditUserLoading(false);
+    }
+  };
+
+
+
   const filteredEmployees = employees.filter(emp => {
     const q = searchQuery.toLowerCase();
+    const fullName = `${emp.firstName} ${emp.lastName}`.toLowerCase();
     return (
-      emp.firstName.toLowerCase().includes(q) ||
-      emp.lastName.toLowerCase().includes(q) ||
+      fullName.includes(q) ||
       emp.employeeCode.toLowerCase().includes(q) ||
       (emp.email && emp.email.toLowerCase().includes(q))
     );
+  }).sort((a, b) => {
+    const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+    const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+    return nameA.localeCompare(nameB);
   });
 
   return (
@@ -248,6 +327,24 @@ export default function Employees() {
             onChange={e => setPositionInput(e.target.value)}
             sx={{ mb: 2 }}
           />
+          <Autocomplete
+            multiple
+            options={employees}
+            getOptionLabel={(option) => `${option.firstName} ${option.lastName} (${option.employeeCode}) - ${option.email && option.email !== '(No Email)' ? option.email : 'No Email'}`}
+            value={employees.filter(e => newEmployee.subordinateIds.includes(e.id))}
+            onChange={(_, newValue) => setNewEmployee({ ...newEmployee, subordinateIds: newValue.map(v => v.id) })}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                margin="dense"
+                label="Subordinates (Optional)"
+                fullWidth
+                variant="outlined"
+              />
+            )}
+            sx={{ mb: 2 }}
+          />
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
@@ -262,6 +359,7 @@ export default function Employees() {
           placeholder="Search by name, code, or email..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
+          autoComplete="off"
           slotProps={{
             input: {
               startAdornment: (
@@ -282,6 +380,7 @@ export default function Employees() {
               <TableCell sx={{ fontWeight: 'normal' }}>Code</TableCell>
               <TableCell sx={{ fontWeight: 'normal' }}>Name</TableCell>
               <TableCell sx={{ fontWeight: 'normal' }}>Email</TableCell>
+              <TableCell sx={{ fontWeight: 'normal' }}>Managed Employees</TableCell>
               <TableCell sx={{ fontWeight: 'normal' }}>Position</TableCell>
               <TableCell align="right" sx={{ fontWeight: 'normal' }}>Actions</TableCell>
             </TableRow>
@@ -308,7 +407,15 @@ export default function Employees() {
                   <TableCell component="th" scope="row">{row.employeeCode.startsWith('no ID') ? 'no ID' : row.employeeCode}</TableCell>
                   <TableCell>{row.firstName} {row.lastName}</TableCell>
                   <TableCell>{row.email}</TableCell>
-                  <TableCell>{row.position?.name || 'N/A'}</TableCell>
+                  <TableCell>
+                    {row.subordinatesList ? row.subordinatesList : <span style={{ color: '#94a3b8' }}>None</span>}
+                  </TableCell>
+                  <TableCell>
+                    {row.position?.name || 'N/A'}
+                    <span style={{ color: '#64748b', fontSize: '0.85em', marginLeft: '8px' }}>
+                      ({row.role || 'Employee'})
+                    </span>
+                  </TableCell>
                   <TableCell align="right">
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', flexWrap: 'nowrap', gap: 1 }}>
                       <Button color="success" size="small" onClick={() => handleOpenBalance(row)} title="Set Leave Balance" sx={{ minWidth: 32 }}>
@@ -317,9 +424,15 @@ export default function Employees() {
                       <Button color="secondary" size="small" onClick={() => confirmResetPassword(row.id)} title="Reset Password" sx={{ minWidth: 32 }}>
                         <Key size={16} />
                       </Button>
-                      <Button color="primary" size="small" onClick={() => openEditDialog(row)} title="Edit Employee" sx={{ minWidth: 32 }}>
-                        <Edit2 size={16} />
-                      </Button>
+                      {isAdmin ? (
+                        <Button color="primary" size="small" onClick={() => openEditUserDialog(row)} title="Edit User Account" sx={{ minWidth: 32 }}>
+                          <UserCog size={16} />
+                        </Button>
+                      ) : (
+                        <Button color="primary" size="small" onClick={() => openEditDialog(row)} title="Edit Employee" sx={{ minWidth: 32 }}>
+                          <Edit2 size={16} />
+                        </Button>
+                      )}
                       <Button color="error" size="small" onClick={() => confirmDelete(row.id)} title="Delete Employee" sx={{ minWidth: 32 }}>
                         <Trash2 size={16} />
                       </Button>
@@ -332,10 +445,77 @@ export default function Employees() {
         </Table>
       </TableContainer>
 
+      <Dialog open={editUserOpen} onClose={() => setEditUserOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 'normal' }}>Edit User Account</DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField label="Username" fullWidth variant="outlined" value={editUserForm.username} onChange={e => setEditUserForm({ ...editUserForm, username: e.target.value })} />
+            <TextField
+              label="Password (Leave blank to keep current)"
+              type={showEditUserPassword ? "text" : "password"}
+              fullWidth
+              variant="outlined"
+              autoComplete="new-password"
+              value={editUserForm.password}
+              onChange={e => setEditUserForm({ ...editUserForm, password: e.target.value })}
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={() => setShowEditUserPassword(!showEditUserPassword)}
+                        edge="end"
+                      >
+                        {showEditUserPassword ? <Eye size={20} /> : <EyeOff size={20} />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }
+              }}
+            />
+            <TextField label="Full Name" fullWidth variant="outlined" value={editUserForm.fullName} onChange={e => setEditUserForm({ ...editUserForm, fullName: e.target.value })} />
+            <TextField label="Email" type="email" fullWidth variant="outlined" value={editUserForm.email} onChange={e => setEditUserForm({ ...editUserForm, email: e.target.value })} />
+            <TextField label="Employee Code" fullWidth variant="outlined" value={editUserForm.employeeCode} onChange={e => setEditUserForm({ ...editUserForm, employeeCode: e.target.value })} />
+            <TextField label="Position" fullWidth variant="outlined" value={editUserForm.positionName} onChange={e => setEditUserForm({ ...editUserForm, positionName: e.target.value })} />
+
+            <TextField select fullWidth label="Role" value={editUserForm.role} onChange={e => setEditUserForm({ ...editUserForm, role: e.target.value })} slotProps={{ select: { native: true } }}>
+              <option value="Employee">Employee</option>
+              <option value="Manager">Manager</option>
+              <option value="HR">HR</option>
+              <option value="Admin">Admin</option>
+            </TextField>
+
+            <Autocomplete
+              multiple
+              options={employees.filter(emp => emp.id !== editingId)}
+              getOptionLabel={(option) => `${option.firstName} ${option.lastName}`}
+              value={employees.filter(e => editUserForm.subordinateIds.includes(e.id))}
+              onChange={(_, newValue) => setEditUserForm({ ...editUserForm, subordinateIds: newValue.map(v => v.id) })}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Managed Employees"
+                  fullWidth
+                  variant="outlined"
+                />
+              )}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setEditUserOpen(false)} color="inherit" disabled={editUserLoading}>Cancel</Button>
+          <Button onClick={handleSaveEditUser} variant="contained" color="primary" disabled={editUserLoading}>
+            {editUserLoading ? <CircularProgress size={24} /> : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={resetConfirmOpen} onClose={() => setResetConfirmOpen(false)}>
         <DialogTitle sx={{ fontWeight: 'normal' }}>Reset Password</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to reset this employee's password to EMP-SYNC-(Employee Code)?</Typography>
+          <Typography>Are you sure you want to reset this employee's password to 'measuresoft'?</Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setResetConfirmOpen(false)} color="inherit">Cancel</Button>

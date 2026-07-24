@@ -21,4 +21,8 @@ public class CreateEmployeeDto
     public int PositionId { get; set; }
 
     public int ShiftId { get; set; }
+
+    public int? ManagerId { get; set; }
+
+    public List<int> SubordinateIds { get; set; } = new List<int>();
 }
