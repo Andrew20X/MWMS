@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Typography, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, InputAdornment, Autocomplete, IconButton } from '@mui/material';
-import { Plus, Trash2, Edit2, Key, Search, Calendar, UserCog, Eye, EyeOff } from 'lucide-react';
+import { Typography, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, InputAdornment, Autocomplete } from '@mui/material';
+import { Plus, Trash2, Edit2, Key, Search, Calendar, UserCog } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -66,7 +66,7 @@ export default function Employees() {
     managerId: null as number | null,
     subordinateIds: [] as number[]
   });
-  const [showEditUserPassword, setShowEditUserPassword] = useState(false);
+
 
   const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
   const [balanceEmployee, setBalanceEmployee] = useState<Employee | null>(null);
