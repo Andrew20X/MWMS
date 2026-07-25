@@ -49,9 +49,15 @@ public class AuthService : IAuthService
             employee = await _employeeRepository.GetByEmployeeCodeAsync(deviceUserId);
         }
 
-        if (employee == null && !string.IsNullOrEmpty(user.Email))
+        if (employee == null && !string.IsNullOrEmpty(user.Email) && user.Email != "(No Email)")
         {
             employee = await _employeeRepository.GetByEmailAsync(user.Email);
+        }
+
+        if (employee == null)
+        {
+            var employees = await _employeeRepository.GetAllAsync();
+            employee = employees.FirstOrDefault(e => e.FirstName + " " + e.LastName == user.FullName);
         }
 
         var finalRole = user.Role;
@@ -150,13 +156,21 @@ public class AuthService : IAuthService
     public async Task GenerateLoginsAsync()
     {
         var employees = await _employeeRepository.GetAllAsync();
+        var users = await _userRepository.GetAllAsync();
+        
         foreach (var employee in employees)
         {
             if (!string.IsNullOrEmpty(employee.EmployeeCode))
             {
-                var existingUser = await _userRepository.GetByUsernameAsync($"MANAGER-SYNC-{employee.EmployeeCode}") ?? await _userRepository.GetByUsernameAsync($"EMP-SYNC-{employee.EmployeeCode}");
-                var role = existingUser?.Role ?? "Employee";
-                var username = role == "Manager" ? $"MANAGER-SYNC-{employee.EmployeeCode}" : $"EMP-SYNC-{employee.EmployeeCode}";
+                var existingUser = users.FirstOrDefault(u => 
+                    !u.IsDeleted && !u.Username.StartsWith("EMP-SYNC") && !u.Username.StartsWith("MANAGER-SYNC") &&
+                    ((!string.IsNullOrEmpty(employee.Email) && employee.Email != "(No Email)" && u.Email == employee.Email) ||
+                     u.FullName == $"{employee.FirstName} {employee.LastName}"))
+                    ?? users.FirstOrDefault(u => 
+                        !u.IsDeleted && (u.Username == $"EMP-SYNC-{employee.EmployeeCode}" || u.Username == $"MANAGER-SYNC-{employee.EmployeeCode}"));
+
+                var role = existingUser?.Role ?? (employee.Subordinates != null && employee.Subordinates.Any() ? "Manager" : "Employee");
+                var username = existingUser?.Username ?? (role == "Manager" ? $"MANAGER-SYNC-{employee.EmployeeCode}" : $"EMP-SYNC-{employee.EmployeeCode}");
                 
                 if (existingUser == null)
                 {
@@ -180,6 +194,7 @@ public class AuthService : IAuthService
                 }
             }
         }
+
         await _userRepository.SaveChangesAsync();
     }
 

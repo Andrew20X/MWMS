@@ -23,7 +23,7 @@ export default function Deductions() {
   const [deductions, setDeductions] = useState<Deduction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [waiveDialog, setWaiveDialog] = useState<{ open: boolean; id: number | null }>({ open: false, id: null });
+  const [waiveDialog, setWaiveDialog] = useState<{ open: boolean; id: number | null; reason: string }>({ open: false, id: null, reason: '' });
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; id: number | null; reason: string }>({ open: false, id: null, reason: '' });
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; id: number | null }>({ open: false, id: null });
   const [deleteAllDialog, setDeleteAllDialog] = useState(false);
@@ -63,10 +63,11 @@ export default function Deductions() {
   const handleWaive = async () => {
     if (!waiveDialog.id) return;
     try {
-      await axios.post(`http://localhost:5222/api/Deductions/${waiveDialog.id}/waive`, {}, {
-        headers: { Authorization: `Bearer ${user?.token}` }
-      });
-      setWaiveDialog({ open: false, id: null });
+      await axios.post(`http://localhost:5222/api/Deductions/${waiveDialog.id}/waive`, 
+        { reason: waiveDialog.reason }, 
+        { headers: { Authorization: `Bearer ${user?.token}` } }
+      );
+      setWaiveDialog({ open: false, id: null, reason: '' });
       showMessage('Exception approved successfully.', 'success');
       fetchDeductions();
     } catch (err: any) {
@@ -221,7 +222,7 @@ export default function Deductions() {
                               variant="outlined" 
                               color="success" 
                               sx={{ textTransform: 'none', borderRadius: 2, p: { xs: '6px 12px', sm: '4px 10px' }, minWidth: { xs: '80px', sm: 'auto' } }}
-                              onClick={() => setWaiveDialog({ open: true, id: row.id })}
+                              onClick={() => setWaiveDialog({ open: true, id: row.id, reason: '' })}
                             >
                               Approve
                             </Button>
@@ -255,13 +256,22 @@ export default function Deductions() {
       </TableContainer>
 
       {/* Waive Dialog */}
-      <Dialog open={waiveDialog.open} onClose={() => setWaiveDialog({ open: false, id: null })} sx={{ '& .MuiDialog-paper': { borderRadius: 3 } }}>
+      <Dialog open={waiveDialog.open} onClose={() => setWaiveDialog({ open: false, id: null, reason: '' })} sx={{ '& .MuiDialog-paper': { borderRadius: 3, width: '400px' } }}>
         <DialogTitle sx={{ fontWeight: 600 }}>Approve Exception</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to approve this exception and waive the salary deduction? This action cannot be easily reversed.</Typography>
+          <Typography sx={{ mb: 2 }}>Are you sure you want to approve this exception and waive the salary deduction? This action cannot be easily reversed.</Typography>
+          <TextField
+            fullWidth
+            label="Approval Reason/Comment (Optional)"
+            multiline
+            rows={3}
+            value={waiveDialog.reason}
+            onChange={(e) => setWaiveDialog({ ...waiveDialog, reason: e.target.value })}
+            variant="outlined"
+          />
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button onClick={() => setWaiveDialog({ open: false, id: null })} color="inherit" sx={{ textTransform: 'none', minHeight: '44px' }}>Cancel</Button>
+          <Button onClick={() => setWaiveDialog({ open: false, id: null, reason: '' })} color="inherit" sx={{ textTransform: 'none', minHeight: '44px' }}>Cancel</Button>
           <Button onClick={handleWaive} variant="contained" color="primary" sx={{ textTransform: 'none', borderRadius: 2, boxShadow: 'none', minHeight: '44px' }}>
             Approve Exception
           </Button>

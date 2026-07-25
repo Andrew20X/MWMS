@@ -16,17 +16,20 @@ public class AttendanceService : IAttendanceService
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IOvertimeRepository _overtimeRepository;
     private readonly MWMS.Application.Interfaces.IGenericRepository<RawAttendanceLog> _rawLogRepository;
+    private readonly ISalaryDeductionRepository _deductionRepository;
 
     public AttendanceService(
         IAttendanceRepository attendanceRepository, 
         IEmployeeRepository employeeRepository,
         IOvertimeRepository overtimeRepository,
-        MWMS.Application.Interfaces.IGenericRepository<RawAttendanceLog> rawLogRepository)
+        MWMS.Application.Interfaces.IGenericRepository<RawAttendanceLog> rawLogRepository,
+        ISalaryDeductionRepository deductionRepository)
     {
         _attendanceRepository = attendanceRepository;
         _employeeRepository = employeeRepository;
         _overtimeRepository = overtimeRepository;
         _rawLogRepository = rawLogRepository;
+        _deductionRepository = deductionRepository;
     }
 
     public async Task DeleteMyAttendanceAsync(int employeeId)
@@ -459,6 +462,12 @@ public class AttendanceService : IAttendanceService
             .GroupBy(o => o.Date)
             .ToDictionary(g => g.Key, g => g.ToList());
 
+        var deductions = await _deductionRepository.GetByEmployeeAsync(employeeId);
+        var periodDeductions = deductions
+            .Where(d => d.RelatedAttendance != null && d.RelatedAttendance.Date >= startDate && d.RelatedAttendance.Date <= endDate && (d.Status == PayrollStatus.Waived || d.Status == PayrollStatus.Rejected))
+            .GroupBy(d => d.RelatedAttendance.Date)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         int startRow = 13;
         
         // 1. Clear all 31 days (rows 13 to 43) contents so no old template data is left
@@ -513,6 +522,28 @@ public class AttendanceService : IAttendanceService
                     desc = desc + " | " + otDesc;
                 }
                 
+                var deducDescList = new List<string>();
+                if (periodDeductions.TryGetValue(date, out var deducs))
+                {
+                    foreach (var d in deducs)
+                    {
+                        if (d.Status == PayrollStatus.Rejected)
+                        {
+                            var msg = "Deduction Approved";
+                            if (!string.IsNullOrWhiteSpace(d.RejectionReason)) msg += $": {d.RejectionReason}";
+                            deducDescList.Add(msg);
+                        }
+                        else if (d.Status == PayrollStatus.Waived)
+                        {
+                            deducDescList.Add("Deduction Rejected/Waived");
+                        }
+                    }
+                }
+                if (deducDescList.Any())
+                {
+                    desc = desc + (desc == attendance.Status.ToString() ? " | " : ", ") + string.Join(", ", deducDescList);
+                }
+                
                 worksheet.Cell(row, 12).Value = desc;
             }
             else
@@ -531,6 +562,29 @@ public class AttendanceService : IAttendanceService
                     var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}"));
                     desc = desc + " | " + otDesc;
                 }
+
+                var deducDescList = new List<string>();
+                if (periodDeductions.TryGetValue(date, out var deducs))
+                {
+                    foreach (var d in deducs)
+                    {
+                        if (d.Status == PayrollStatus.Rejected)
+                        {
+                            var msg = "Deduction Approved";
+                            if (!string.IsNullOrWhiteSpace(d.RejectionReason)) msg += $": {d.RejectionReason}";
+                            deducDescList.Add(msg);
+                        }
+                        else if (d.Status == PayrollStatus.Waived)
+                        {
+                            deducDescList.Add("Deduction Rejected/Waived");
+                        }
+                    }
+                }
+                if (deducDescList.Any())
+                {
+                    desc = desc + (desc == (isWeekend ? "Weekend" : "Absent") ? " | " : ", ") + string.Join(", ", deducDescList);
+                }
+
                 worksheet.Cell(row, 12).Value = desc;
             }
         }
@@ -585,6 +639,12 @@ public class AttendanceService : IAttendanceService
             var periodOvertimes = overtimeRequests
                 .Where(o => o.Date >= startDate && o.Date <= endDate && o.Status == "Approved")
                 .GroupBy(o => o.Date)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            var deductions = await _deductionRepository.GetByEmployeeAsync(employee.Id);
+            var periodDeductions = deductions
+                .Where(d => d.RelatedAttendance != null && d.RelatedAttendance.Date >= startDate && d.RelatedAttendance.Date <= endDate && (d.Status == PayrollStatus.Waived || d.Status == PayrollStatus.Rejected))
+                .GroupBy(d => d.RelatedAttendance.Date)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
             int startRow = 13;
@@ -642,6 +702,28 @@ public class AttendanceService : IAttendanceService
                         desc = desc + " | " + otDesc;
                     }
                     
+                    var deducDescList = new List<string>();
+                    if (periodDeductions.TryGetValue(date, out var deducs))
+                    {
+                        foreach (var d in deducs)
+                        {
+                        if (d.Status == PayrollStatus.Rejected)
+                        {
+                            var msg = "Deduction Approved";
+                            if (!string.IsNullOrWhiteSpace(d.RejectionReason)) msg += $": {d.RejectionReason}";
+                            deducDescList.Add(msg);
+                        }
+                        else if (d.Status == PayrollStatus.Waived)
+                        {
+                            deducDescList.Add("Deduction Rejected/Waived");
+                        }
+                        }
+                    }
+                    if (deducDescList.Any())
+                    {
+                        desc = desc + (desc == attendance.Status.ToString() ? " | " : ", ") + string.Join(", ", deducDescList);
+                    }
+                    
                     worksheet.Cell(row, 12).Value = desc;
                 }
                 else
@@ -660,6 +742,29 @@ public class AttendanceService : IAttendanceService
                         var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}"));
                         desc = desc + " | " + otDesc;
                     }
+
+                    var deducDescList = new List<string>();
+                    if (periodDeductions.TryGetValue(date, out var deducs))
+                    {
+                        foreach (var d in deducs)
+                        {
+                        if (d.Status == PayrollStatus.Rejected)
+                        {
+                            var msg = "Deduction Approved";
+                            if (!string.IsNullOrWhiteSpace(d.RejectionReason)) msg += $": {d.RejectionReason}";
+                            deducDescList.Add(msg);
+                        }
+                        else if (d.Status == PayrollStatus.Waived)
+                        {
+                            deducDescList.Add("Deduction Rejected/Waived");
+                        }
+                        }
+                    }
+                    if (deducDescList.Any())
+                    {
+                        desc = desc + (desc == (isWeekend ? "Weekend" : "Absent") ? " | " : ", ") + string.Join(", ", deducDescList);
+                    }
+
                     worksheet.Cell(row, 12).Value = desc;
                 }
             }

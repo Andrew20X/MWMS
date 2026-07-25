@@ -237,18 +237,30 @@ export default function Employees() {
       const empRes = await axios.get(`http://localhost:5222/api/Employees/${employee.id}`);
       const emp = empRes.data;
 
-      // Determine username
+      // Fetch the actual user linked to this employee
       let currentUsername = emp.username || (emp.role === 'Manager' ? `MANAGER-SYNC-${emp.employeeCode}` : `EMP-SYNC-${emp.employeeCode}`);
+      let userRole = employee.role || 'Employee';
+      let userEmail = emp.email || '';
 
-      // Look up user info using the users list or endpoint (but we don't have a GET /api/users/{id} yet, so we'll use best effort from employee table)
+      try {
+        const userRes = await axios.get(`http://localhost:5222/api/Users/by-employee/${employee.id}`);
+        if (userRes.data) {
+          currentUsername = userRes.data.username;
+          userRole = userRes.data.role;
+          if (userRes.data.email) userEmail = userRes.data.email;
+        }
+      } catch (e) {
+        // Fallback to defaults if user isn't found (e.g. hasn't generated logins yet)
+      }
+
       setEditUserForm({
         username: currentUsername,
         password: '',
         fullName: `${emp.firstName} ${emp.lastName}`,
-        email: emp.email || '',
+        email: userEmail,
         employeeCode: emp.employeeCode || '',
         positionName: emp.position?.name || '',
-        role: employee.role || 'Employee', // from table data
+        role: userRole,
         managerId: emp.managerId || null,
         subordinateIds: employees.filter(e => e.managerId === employee.id).map(e => e.id)
       });
@@ -450,30 +462,7 @@ export default function Employees() {
         <DialogContent>
           <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <TextField label="Username" fullWidth variant="outlined" value={editUserForm.username} onChange={e => setEditUserForm({ ...editUserForm, username: e.target.value })} />
-            <TextField
-              label="Password (Leave blank to keep current)"
-              type={showEditUserPassword ? "text" : "password"}
-              fullWidth
-              variant="outlined"
-              autoComplete="new-password"
-              value={editUserForm.password}
-              onChange={e => setEditUserForm({ ...editUserForm, password: e.target.value })}
-              slotProps={{
-                input: {
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={() => setShowEditUserPassword(!showEditUserPassword)}
-                        edge="end"
-                      >
-                        {showEditUserPassword ? <Eye size={20} /> : <EyeOff size={20} />}
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }
-              }}
-            />
+
             <TextField label="Full Name" fullWidth variant="outlined" value={editUserForm.fullName} onChange={e => setEditUserForm({ ...editUserForm, fullName: e.target.value })} />
             <TextField label="Email" type="email" fullWidth variant="outlined" value={editUserForm.email} onChange={e => setEditUserForm({ ...editUserForm, email: e.target.value })} />
             <TextField label="Employee Code" fullWidth variant="outlined" value={editUserForm.employeeCode} onChange={e => setEditUserForm({ ...editUserForm, employeeCode: e.target.value })} />

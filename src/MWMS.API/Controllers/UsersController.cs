@@ -31,7 +31,65 @@ public class UsersController : ControllerBase
         _context = context;
     }
 
-    [HttpPut("{employeeId}")]
+    [HttpGet("cleanup-duplicates")]
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+    public async Task<IActionResult> CleanupDuplicates()
+    {
+        var users = await _userRepository.GetAllAsync();
+        var duplicatesToRemove = new List<User>();
+
+        // Find users with the same email
+        var groupedByEmail = users.Where(u => !string.IsNullOrEmpty(u.Email) && !u.IsDeleted).GroupBy(u => u.Email);
+        foreach (var group in groupedByEmail)
+        {
+            if (group.Count() > 1)
+            {
+                // We have duplicates. Keep the manual one (not starting with EMP-SYNC or MANAGER-SYNC), delete the others.
+                var manualUsers = group.Where(u => !u.Username.StartsWith("EMP-SYNC") && !u.Username.StartsWith("MANAGER-SYNC")).ToList();
+                if (manualUsers.Any())
+                {
+                    var autoUsers = group.Where(u => u.Username.StartsWith("EMP-SYNC") || u.Username.StartsWith("MANAGER-SYNC")).ToList();
+                    duplicatesToRemove.AddRange(autoUsers);
+                }
+            }
+        }
+
+        foreach (var dup in duplicatesToRemove)
+        {
+            _context.Users.Remove(dup);
+        }
+
+        await _context.SaveChangesAsync();
+        return Ok(new { message = $"Cleaned up {duplicatesToRemove.Count} duplicate auto-generated users." });
+    }
+
+    [HttpGet("by-employee/{employeeId}")]
+    public async Task<IActionResult> GetUserByEmployeeId(int employeeId)
+    {
+        var employee = await _employeeRepository.GetByIdAsync(employeeId);
+        if (employee == null) return NotFound(new { error = "Employee not found." });
+
+        var users = await _userRepository.GetAllAsync();
+        var user = users.FirstOrDefault(u => 
+            !u.IsDeleted && !u.Username.StartsWith("EMP-SYNC") && !u.Username.StartsWith("MANAGER-SYNC") &&
+            ((!string.IsNullOrEmpty(employee.Email) && employee.Email != "(No Email)" && u.Email == employee.Email) ||
+             u.FullName == $"{employee.FirstName} {employee.LastName}"))
+            ?? users.FirstOrDefault(u => 
+                !u.IsDeleted && (u.Username == $"EMP-SYNC-{employee.EmployeeCode}" || u.Username == $"MANAGER-SYNC-{employee.EmployeeCode}"));
+
+        if (user == null) return NotFound(new { error = "Corresponding user account not found for this employee." });
+
+        return Ok(new
+        {
+            user.Id,
+            user.Username,
+            user.FullName,
+            user.Email,
+            user.Role
+        });
+    }
+
+    [HttpPut("{employeeId:int}")]
     public async Task<IActionResult> UpdateUserAccount(int employeeId, [FromBody] UpdateUserAccountDto dto)
     {
         var adminUserIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
@@ -47,18 +105,44 @@ public class UsersController : ControllerBase
         var users = await _userRepository.GetAllAsync();
         
         var user = users.FirstOrDefault(u => 
-            u.Username == $"EMP-SYNC-{employee.EmployeeCode}" || 
-            (!string.IsNullOrEmpty(employee.Email) && u.Email == employee.Email) ||
-            u.FullName == $"{employee.FirstName} {employee.LastName}");
+            !u.IsDeleted && !u.Username.StartsWith("EMP-SYNC") && !u.Username.StartsWith("MANAGER-SYNC") &&
+            ((!string.IsNullOrEmpty(employee.Email) && employee.Email != "(No Email)" && u.Email == employee.Email) ||
+             u.FullName == $"{employee.FirstName} {employee.LastName}"))
+            ?? users.FirstOrDefault(u => 
+                !u.IsDeleted && (u.Username == $"EMP-SYNC-{employee.EmployeeCode}" || u.Username == $"MANAGER-SYNC-{employee.EmployeeCode}"));
+
 
         if (user == null) return NotFound(new { error = "Corresponding user account not found for this employee." });
 
         // Validate uniqueness
-        if (users.Any(u => u.Id != user.Id && u.Username == dto.Username && !u.IsDeleted))
-            return BadRequest(new { error = "Username is already taken." });
+        var conflictingUsernameUser = users.FirstOrDefault(u => u.Id != user.Id && u.Username == dto.Username && !u.IsDeleted);
+        if (conflictingUsernameUser != null)
+        {
+            if (conflictingUsernameUser.Username.StartsWith("EMP-SYNC") || conflictingUsernameUser.Username.StartsWith("MANAGER-SYNC"))
+            {
+                _context.Users.Remove(conflictingUsernameUser);
+            }
+            else
+            {
+                return BadRequest(new { error = "Username is already taken." });
+            }
+        }
             
-        if (!string.IsNullOrEmpty(dto.Email) && users.Any(u => u.Id != user.Id && u.Email == dto.Email && !u.IsDeleted))
-            return BadRequest(new { error = "Email is already taken by another user." });
+        if (dto.Email != user.Email)
+        {
+            var conflictingEmailUser = users.FirstOrDefault(u => u.Id != user.Id && u.Email == dto.Email && !u.IsDeleted);
+            if (conflictingEmailUser != null && !string.IsNullOrEmpty(dto.Email) && dto.Email != "(No Email)")
+            {
+                if (conflictingEmailUser.Username.StartsWith("EMP-SYNC") || conflictingEmailUser.Username.StartsWith("MANAGER-SYNC"))
+                {
+                    _context.Users.Remove(conflictingEmailUser);
+                }
+                else
+                {
+                    return BadRequest(new { error = $"Email is already taken by another user account: '{conflictingEmailUser.Username}'. Please use a different email or delete the duplicate account." });
+                }
+            }
+        }
 
         var employees = await _employeeRepository.GetAllAsync();
         if (employees.Any(e => e.Id != employee.Id && e.EmployeeCode == dto.EmployeeCode && !e.IsDeleted))

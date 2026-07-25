@@ -69,6 +69,66 @@ public class AttendanceEngineController : ControllerBase
         return Ok(new { message = $"Simulated an unexcused absence for Employee ID {employeeId}. Check the dashboard!" });
     }
 
+    [HttpGet("test-ziad-absence")]
+    [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+    public async Task<IActionResult> TestZiadAbsence(
+        [FromServices] MWMS.Persistence.Context.AppDbContext dbContext,
+        [FromServices] IEmailService emailService)
+    {
+        var ziad = await dbContext.Employees.FirstOrDefaultAsync(e => e.FirstName.Contains("Ziad"));
+        if (ziad == null) return NotFound("Ziad not found in database.");
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        // Employee is absent without leave
+        var absenceRecord = new MWMS.Domain.Entities.Attendance
+        {
+            EmployeeId = ziad.Id,
+            Date = today,
+            Status = MWMS.Domain.Enums.AttendanceStatus.Absent,
+            IsUnexcused = true,
+            AbsenceResolutionStatus = MWMS.Domain.Enums.AbsenceResolutionStatus.PendingResolution,
+            DeadlineForLeaveRequest = DateTime.Now.AddDays(2)
+        };
+
+        dbContext.Attendances.Add(absenceRecord);
+
+        // Create the deduction immediately on the same day
+        var deduction = new MWMS.Domain.Entities.SalaryDeduction
+        {
+            EmployeeId = ziad.Id,
+            RelatedAttendance = absenceRecord,
+            DeductionAmount = 150.0m, // standard daily rate
+            Reason = $"AWOL: Unexcused absence on {today}",
+            AppliedOnDate = DateTime.Now,
+            Status = MWMS.Domain.Enums.PayrollStatus.PendingPayroll
+        };
+        dbContext.SalaryDeductions.Add(deduction);
+
+        // Create Warning Announcement
+        var announcement = new MWMS.Domain.Entities.Announcement
+        {
+            Title = "Warning: Unexcused Absence",
+            Content = $"You were absent on {today} without a leave request. A salary deduction is pending admin review.",
+            Type = "Notice",
+            TargetEmployeeId = ziad.Id
+        };
+        dbContext.Announcements.Add(announcement);
+
+        // Send email warning
+        var subject = "Action Required: Pending Salary Deduction";
+        var body = $"<p>Dear {ziad.FirstName} {ziad.LastName},</p><p>You were marked absent today ({today}) and did not submit a leave request. A salary deduction is currently pending admin review.</p>";
+        
+        if (!string.IsNullOrEmpty(ziad.Email))
+        {
+            try { await emailService.SendEmailAsync(ziad.Email, subject, body); } catch { }
+        }
+
+        await dbContext.SaveChangesAsync();
+
+        return Ok(new { message = $"Simulated same-day absence and warning for {ziad.FirstName} {ziad.LastName}." });
+    }
+
     [HttpGet("simulate-deduction")]
     // Removed [Authorize] so it can be called from the browser easily
     public async Task<IActionResult> SimulateDeduction(

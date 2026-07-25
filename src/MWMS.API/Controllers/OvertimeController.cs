@@ -34,7 +34,7 @@ public class OvertimeController : ControllerBase
     public async Task<IActionResult> GetMyOvertimeRequests()
     {
         var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
-        if (employeeIdClaim == null) return Unauthorized();
+        if (string.IsNullOrEmpty(employeeIdClaim)) return Ok(new List<OvertimeRequest>());
 
         var employeeId = int.Parse(employeeIdClaim);
         var requests = await _overtimeRepository.GetByEmployeeAsync(employeeId);
@@ -66,7 +66,7 @@ public class OvertimeController : ControllerBase
     public async Task<IActionResult> GetManagerPendingOvertime()
     {
         var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
-        if (string.IsNullOrEmpty(employeeIdClaim)) return Unauthorized();
+        if (string.IsNullOrEmpty(employeeIdClaim)) return Ok(new List<OvertimeRequest>());
 
         var employeeId = int.Parse(employeeIdClaim);
         var all = await _overtimeRepository.GetAllAsync();
@@ -153,6 +153,14 @@ public class OvertimeController : ControllerBase
         }
 
         request.AdminNote = adminNote;
+        
+        var formattedNote = $"\n\n* Approval Status: {decision}\n* Approved By: {callerName}\n* Approval Date: {DateTime.UtcNow:yyyy-MM-dd hh:mm tt}";
+        if (!string.IsNullOrEmpty(adminNote))
+        {
+            formattedNote += $"\n* Admin Note: {adminNote}";
+        }
+        request.Reason += formattedNote;
+
         request.UpdatedAt = DateTime.UtcNow;
         _overtimeRepository.Update(request);
 
@@ -216,6 +224,14 @@ public class OvertimeController : ControllerBase
 
         request.Status = OvertimeRequest.StatusRejected;
         request.AdminNote = adminNote;
+        
+        var formattedNote = $"\n\n* Approval Status: Rejected\n* Rejected By: {callerName}\n* Rejection Date: {DateTime.UtcNow:yyyy-MM-dd hh:mm tt}";
+        if (!string.IsNullOrEmpty(adminNote))
+        {
+            formattedNote += $"\n* Admin Note: {adminNote}";
+        }
+        request.Reason += formattedNote;
+
         request.UpdatedAt = DateTime.UtcNow;
         _overtimeRepository.Update(request);
 

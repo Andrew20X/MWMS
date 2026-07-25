@@ -74,9 +74,14 @@ public class DeductionsController : ControllerBase
         return Ok(deductions);
     }
 
+    public class WaiveDeductionRequest
+    {
+        public string? Reason { get; set; }
+    }
+
     [HttpPost("{id}/waive")]
     [Authorize(Roles = "Admin, HR")]
-    public async Task<IActionResult> WaiveDeduction(int id)
+    public async Task<IActionResult> WaiveDeduction(int id, [FromBody] WaiveDeductionRequest request)
     {
         var deduction = await _dbContext.SalaryDeductions
             .Include(d => d.Employee)
@@ -94,6 +99,10 @@ public class DeductionsController : ControllerBase
         }
 
         deduction.Status = PayrollStatus.Waived;
+        if (!string.IsNullOrWhiteSpace(request.Reason))
+        {
+            deduction.RejectionReason = request.Reason;
+        }
         
         // Optionally update the attendance resolution status if desired
         if (deduction.RelatedAttendance != null && deduction.RelatedAttendance.AbsenceResolutionStatus == AbsenceResolutionStatus.DeductionApplied)
@@ -105,8 +114,12 @@ public class DeductionsController : ControllerBase
 
         if (deduction.Employee != null && !string.IsNullOrEmpty(deduction.Employee.Email))
         {
-            var subject = "Exception Request Approved";
-            var body = $"<p>Dear {deduction.Employee.FirstName},</p><p>Your exception request for the deduction on {deduction.RelatedAttendance?.Date.ToShortDateString()} has been <strong>approved</strong>. The deduction has been waived.</p>";
+            var subject = "Notice: Salary Deduction Waived";
+            var body = $"<p>Dear {deduction.Employee.FirstName},</p><p>Your pending salary deduction for the absence on {deduction.RelatedAttendance?.Date.ToShortDateString()} has been <strong>rejected/waived</strong> by the administration. No amount will be deducted.</p>";
+            if (!string.IsNullOrWhiteSpace(request.Reason))
+            {
+                body += $"<p><strong>Reason/Comment:</strong> {request.Reason}</p>";
+            }
             try { await _emailService.SendEmailAsync(deduction.Employee.Email, subject, body); } catch { }
         }
 
@@ -205,6 +218,19 @@ public class DeductionsController : ControllerBase
         deduction.RejectionDate = DateTime.Now;
         deduction.RejectionReason = request.RejectionReason;
 
+        var callerName = User.FindFirst("FullName")?.Value
+                      ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                      ?? "Admin";
+
+        var formattedNote = $"\n\n* Approval Status: Rejected\n* Rejected By: {callerName}\n* Rejection Date: {DateTime.Now:yyyy-MM-dd hh:mm tt}";
+        if (!string.IsNullOrEmpty(request.RejectionReason))
+        {
+            formattedNote += $"\n* Admin Note: {request.RejectionReason}";
+        }
+        
+        // Append to Reason field for consistency
+        deduction.Reason += formattedNote;
+
         if (deduction.RelatedAttendance != null && deduction.RelatedAttendance.AbsenceResolutionStatus == AbsenceResolutionStatus.PendingResolution)
         {
             deduction.RelatedAttendance.AbsenceResolutionStatus = AbsenceResolutionStatus.ExceptionRejected;
@@ -214,11 +240,11 @@ public class DeductionsController : ControllerBase
 
         if (deduction.Employee != null && !string.IsNullOrEmpty(deduction.Employee.Email))
         {
-            var subject = "Exception Request Rejected";
-            var body = $"<p>Dear {deduction.Employee.FirstName},</p><p>Your exception request for the deduction on {deduction.RelatedAttendance?.Date.ToShortDateString()} has been <strong>rejected</strong>.</p>";
+            var subject = "Notice: Salary Deduction Approved";
+            var body = $"<p>Dear {deduction.Employee.FirstName},</p><p>Your pending salary deduction for the absence on {deduction.RelatedAttendance?.Date.ToShortDateString()} has been <strong>approved</strong> by the administration and will be applied to your upcoming payroll.</p>";
             if (!string.IsNullOrEmpty(request.RejectionReason))
             {
-                body += $"<p><strong>Reason:</strong> {request.RejectionReason}</p>";
+                body += $"<p><strong>Reason/Comment:</strong> {request.RejectionReason}</p>";
             }
             try { await _emailService.SendEmailAsync(deduction.Employee.Email, subject, body); } catch { }
         }

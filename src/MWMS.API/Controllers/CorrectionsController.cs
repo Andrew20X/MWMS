@@ -34,7 +34,7 @@ public class CorrectionsController : ControllerBase
     public async Task<IActionResult> GetMyCorrections()
     {
         var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
-        if (employeeIdClaim == null) return Unauthorized();
+        if (string.IsNullOrEmpty(employeeIdClaim)) return Ok(new List<CorrectionRequest>());
 
         var employeeId = int.Parse(employeeIdClaim);
         var requests = await _correctionRepository.GetByEmployeeIdAsync(employeeId);
@@ -76,8 +76,20 @@ public class CorrectionsController : ControllerBase
         var request = await _correctionRepository.GetByIdAsync(id);
         if (request == null) return NotFound();
 
+        var callerName = User.FindFirst("FullName")?.Value
+                      ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                      ?? "Admin";
+
         request.Status = "Approved";
         request.AdminNote = actionDto?.Note;
+        
+        var formattedNote = $"\n\n* Approval Status: Approved\n* Approved By: {callerName}\n* Approval Date: {DateTime.UtcNow:yyyy-MM-dd hh:mm tt}";
+        if (!string.IsNullOrEmpty(actionDto?.Note))
+        {
+            formattedNote += $"\n* Admin Note: {actionDto.Note}";
+        }
+        request.Reason += formattedNote;
+
         request.UpdatedAt = DateTime.UtcNow;
         _correctionRepository.Update(request);
         await _correctionRepository.SaveChangesAsync();
@@ -154,8 +166,20 @@ public class CorrectionsController : ControllerBase
         var request = await _correctionRepository.GetByIdAsync(id);
         if (request == null) return NotFound();
 
+        var callerName = User.FindFirst("FullName")?.Value
+                      ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                      ?? "Admin";
+
         request.Status = "Rejected";
         request.AdminNote = actionDto?.Note;
+
+        var formattedNote = $"\n\n* Approval Status: Rejected\n* Rejected By: {callerName}\n* Rejection Date: {DateTime.UtcNow:yyyy-MM-dd hh:mm tt}";
+        if (!string.IsNullOrEmpty(actionDto?.Note))
+        {
+            formattedNote += $"\n* Admin Note: {actionDto.Note}";
+        }
+        request.Reason += formattedNote;
+
         request.UpdatedAt = DateTime.UtcNow;
         _correctionRepository.Update(request);
         await _correctionRepository.SaveChangesAsync();

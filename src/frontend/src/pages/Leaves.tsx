@@ -317,11 +317,9 @@ export default function Leaves() {
           <Button variant="outlined" color="error" startIcon={<Trash2 size={18} />} onClick={handleDeleteAllLeaves} sx={{ flex: { xs: 1, sm: 'none' } }}>
             Delete All
           </Button>
-          {!canApprove && (
-            <Button variant="contained" startIcon={<Plus size={18} />} onClick={() => setOpen(true)} sx={{ flex: { xs: 1, sm: 'none' } }}>
-              Request Leave
-            </Button>
-          )}
+          <Button variant="contained" startIcon={<Plus size={18} />} onClick={() => setOpen(true)} sx={{ flex: { xs: 1, sm: 'none' } }}>
+            Request Leave
+          </Button>
         </Box>
       </Box>
 

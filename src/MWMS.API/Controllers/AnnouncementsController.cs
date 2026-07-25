@@ -31,6 +31,15 @@ public class AnnouncementsController : ControllerBase
     public async Task<IActionResult> GetActiveAnnouncements()
     {
         var announcements = await _announcementRepository.GetActiveAnnouncementsAsync();
+        
+        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
+        if (employeeIdClaim != null)
+        {
+            var myId = int.Parse(employeeIdClaim);
+            // Only return global announcements or announcements targeted to this employee
+            announcements = announcements.Where(a => a.TargetEmployeeId == null || a.TargetEmployeeId == myId).ToList();
+        }
+        
         return Ok(announcements);
     }
 

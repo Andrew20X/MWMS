@@ -101,9 +101,31 @@ public class EndOfDayAbsenceDetectorJob : BackgroundService
 
                     dbContext.Attendances.Add(absenceRecord);
 
+                    // Create the deduction immediately on the same day
+                    var deduction = new SalaryDeduction
+                    {
+                        EmployeeId = employee.Id,
+                        RelatedAttendance = absenceRecord,
+                        DeductionAmount = 150.0m, // standard daily rate
+                        Reason = $"AWOL: Unexcused absence on {today}",
+                        AppliedOnDate = DateTime.Now,
+                        Status = PayrollStatus.PendingPayroll
+                    };
+                    dbContext.SalaryDeductions.Add(deduction);
+
+                    // Create Warning Announcement
+                    var announcement = new Announcement
+                    {
+                        Title = "Warning: Unexcused Absence",
+                        Content = $"You were absent on {today} without a leave request. A salary deduction is pending admin review.",
+                        Type = "Notice",
+                        TargetEmployeeId = employee.Id
+                    };
+                    dbContext.Announcements.Add(announcement);
+
                     // Send email warning
-                    var subject = "Action Required: Unexcused Absence Detected";
-                    var body = $"<p>Dear {employee.FirstName} {employee.LastName},</p><p>You were marked absent today. Please submit a leave request by {absenceRecord.DeadlineForLeaveRequest} to avoid a salary deduction.</p>";
+                    var subject = "Action Required: Pending Salary Deduction";
+                    var body = $"<p>Dear {employee.FirstName} {employee.LastName},</p><p>You were marked absent today ({today}) and did not submit a leave request. A salary deduction is currently pending admin review.</p>";
                     
                     if (!string.IsNullOrEmpty(employee.Email))
                     {

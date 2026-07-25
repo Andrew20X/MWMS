@@ -24,10 +24,12 @@ public class EmployeesController : ControllerBase
 
         foreach(var emp in employees)
         {
-            var user = users.FirstOrDefault(u => !u.IsDeleted && u.Username == "MANAGER-SYNC-" + emp.EmployeeCode)
-                    ?? users.FirstOrDefault(u => !u.IsDeleted && u.Username == "EMP-SYNC-" + emp.EmployeeCode)
-                    ?? users.FirstOrDefault(u => !u.IsDeleted && !string.IsNullOrEmpty(emp.Email) && u.Email == emp.Email)
-                    ?? users.FirstOrDefault(u => !u.IsDeleted && u.FullName == emp.FirstName + " " + emp.LastName);
+            var user = users.FirstOrDefault(u => 
+                !u.IsDeleted && !u.Username.StartsWith("EMP-SYNC") && !u.Username.StartsWith("MANAGER-SYNC") &&
+                ((!string.IsNullOrEmpty(emp.Email) && emp.Email != "(No Email)" && u.Email == emp.Email) ||
+                 u.FullName == $"{emp.FirstName} {emp.LastName}"))
+                ?? users.FirstOrDefault(u => 
+                    !u.IsDeleted && (u.Username == $"EMP-SYNC-{emp.EmployeeCode}" || u.Username == $"MANAGER-SYNC-{emp.EmployeeCode}"));
             emp.Role = user?.Role ?? "Employee";
             emp.Username = user?.Username ?? (emp.Role == "Manager" ? $"MANAGER-SYNC-{emp.EmployeeCode}" : $"EMP-SYNC-{emp.EmployeeCode}");
             if (emp.Manager != null)
@@ -38,6 +40,17 @@ public class EmployeesController : ControllerBase
             {
                 emp.SubordinateIds = emp.Subordinates.Select(s => s.Id).ToList();
                 emp.SubordinatesList = string.Join(", ", emp.Subordinates.Select(s => s.FirstName + " " + s.LastName));
+                
+                // Dynamically bump role to Manager if they have subordinates
+                if (emp.Role == "Employee")
+                {
+                    emp.Role = "Manager";
+                    // If they are a generated account, fix the username display
+                    if (emp.Username.StartsWith("EMP-SYNC-"))
+                    {
+                        emp.Username = $"MANAGER-SYNC-{emp.EmployeeCode}";
+                    }
+                }
             }
         }
 
@@ -53,10 +66,12 @@ public class EmployeesController : ControllerBase
             return NotFound();
 
         var context = HttpContext.RequestServices.GetRequiredService<MWMS.Persistence.Context.AppDbContext>();
-        var user = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(context.Users, u => !u.IsDeleted && u.Username == "MANAGER-SYNC-" + employee.EmployeeCode)
-                ?? await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(context.Users, u => !u.IsDeleted && u.Username == "EMP-SYNC-" + employee.EmployeeCode)
-                ?? await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(context.Users, u => !u.IsDeleted && !string.IsNullOrEmpty(employee.Email) && u.Email == employee.Email)
-                ?? await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(context.Users, u => !u.IsDeleted && u.FullName == employee.FirstName + " " + employee.LastName);
+        var user = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(context.Users, u => 
+            !u.IsDeleted && !u.Username.StartsWith("EMP-SYNC") && !u.Username.StartsWith("MANAGER-SYNC") &&
+            ((!string.IsNullOrEmpty(employee.Email) && employee.Email != "(No Email)" && u.Email == employee.Email) ||
+             u.FullName == employee.FirstName + " " + employee.LastName))
+            ?? await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(context.Users, u => 
+                !u.IsDeleted && (u.Username == "EMP-SYNC-" + employee.EmployeeCode || u.Username == "MANAGER-SYNC-" + employee.EmployeeCode));
         
         employee.Role = user?.Role ?? "Employee";
         employee.Username = user?.Username ?? (employee.Role == "Manager" ? $"MANAGER-SYNC-{employee.EmployeeCode}" : $"EMP-SYNC-{employee.EmployeeCode}");

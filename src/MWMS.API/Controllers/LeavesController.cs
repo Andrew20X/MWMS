@@ -52,7 +52,7 @@ public class LeavesController : ControllerBase
     public async Task<IActionResult> GetMyLeaves()
     {
         var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
-        if (employeeIdClaim == null) return Unauthorized();
+        if (string.IsNullOrEmpty(employeeIdClaim)) return Ok(new List<LeaveRequestDto>());
 
         var employeeId = int.Parse(employeeIdClaim);
         var leaves = await _leaveService.GetEmployeeLeavesAsync(employeeId);
@@ -71,7 +71,7 @@ public class LeavesController : ControllerBase
     public async Task<IActionResult> GetManagerPendingLeaves()
     {
         var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
-        if (string.IsNullOrEmpty(employeeIdClaim)) return Unauthorized();
+        if (string.IsNullOrEmpty(employeeIdClaim)) return Ok(new List<LeaveRequestDto>());
 
         var employeeId = int.Parse(employeeIdClaim);
         var leaves = await _leaveService.GetManagerPendingLeavesAsync(employeeId);

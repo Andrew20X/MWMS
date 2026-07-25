@@ -24,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<ICorrectionRepository, CorrectionRepository>();
         services.AddScoped<IOvertimeRepository, OvertimeRepository>();
         services.AddScoped<ILeaveBalanceRepository, LeaveBalanceRepository>();
+        services.AddScoped<ISalaryDeductionRepository, SalaryDeductionRepository>();
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         return services;
     }
