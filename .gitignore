@@ -16,7 +16,7 @@ logs/
 
 # Test Results
 TestResults/
-
+CoverageReport/
 # OS Files
 .DS_Store
 Thumbs.db
