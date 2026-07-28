@@ -24,7 +24,7 @@ export default function MainLayout() {
 
   const isAdmin = user?.role === 'Admin';
   const isHR = user?.role === 'HR';
-  const isManager = user?.role === 'Manager';
+
 
   const isHRAdmin = isAdmin || isHR;
 
