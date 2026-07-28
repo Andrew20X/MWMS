@@ -25,7 +25,7 @@ export default function MainLayout() {
   const isAdmin = user?.role === 'Admin';
   const isHR = user?.role === 'HR';
   const isManager = user?.role === 'Manager';
-  const isManagement = isAdmin || isHR || isManager;
+
   const isHRAdmin = isAdmin || isHR;
 
   const drawerContent = (
