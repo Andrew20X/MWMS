@@ -21,7 +21,7 @@ class Program
             using (SqlCommand command = new SqlCommand(sqlAtt, connection))
             {
                 command.Parameters.AddWithValue("@empId", empId);
-                command.Parameters.AddWithValue("@date", DateTime.Today.AddDays(-3)); // 3 days ago
+                command.Parameters.AddWithValue("@date", DateTime.Today.AddDays(-4)); // 4 days ago
                 command.Parameters.AddWithValue("@deadline", DateTime.Today.AddDays(-1));
                 attendanceId = (int)command.ExecuteScalar();
             }
@@ -29,7 +29,7 @@ class Program
             // Insert deduction
             string sqlDed = @"
                 INSERT INTO SalaryDeductions (EmployeeId, RelatedAttendanceId, DeductionAmount, Reason, AppliedOnDate, Status, CreatedAt, UpdatedAt, IsDeleted)
-                VALUES (@empId, @attId, 500.00, 'Test deduction for Ziad', GETUTCDATE(), 0, GETUTCDATE(), GETUTCDATE(), 0)";
+                VALUES (@empId, @attId, 1.0, 'Test deduction for Ziad', GETUTCDATE(), 0, GETUTCDATE(), GETUTCDATE(), 0)";
                 
             using (SqlCommand command = new SqlCommand(sqlDed, connection))
             {

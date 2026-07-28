@@ -60,6 +60,7 @@ const LEAVE_TYPES = [
   { value: 9, label: 'Week End (WE)' },
   { value: 10, label: 'Work Week End (WWE)' },
   { value: 11, label: 'Egypt Field Day (EF)' },
+  { value: 12, label: 'Client Office Day (COD)' },
 ];
 
 // ─── Status helpers ───────────────────────────────────────────────────────────

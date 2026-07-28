@@ -15,5 +15,6 @@ public enum LeaveType
     FactoryDay = 8, // FD - Factory Day
     WeekEnd = 9,    // WE - Week End
     WorkWeekEnd = 10, // WWE - Work Week End
-    EgyptFieldDay = 11 // EF - Egypt Field Day
+    EgyptFieldDay = 11, // EF - Egypt Field Day
+    ClientOfficeDay = 12 // COD - Client Office Day
 }

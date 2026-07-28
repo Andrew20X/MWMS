@@ -205,7 +205,7 @@ export default function Deductions() {
                   <TableCell>{new Date(row.attendanceDate).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <Typography variant="subtitle2" color="error.main">
-                      {row.deductionAmount.toFixed(2)} EGP
+                      {row.deductionAmount} Day(s)
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ minWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
@@ -333,7 +333,7 @@ export default function Deductions() {
       <Dialog open={editDialog.open} onClose={() => setEditDialog({ open: false, id: null, amount: '' })} sx={{ '& .MuiDialog-paper': { borderRadius: 3, width: '400px' } }}>
         <DialogTitle sx={{ fontWeight: 600 }}>Edit Deduction Amount</DialogTitle>
         <DialogContent>
-          <Typography sx={{ mb: 2 }}>Enter the new deduction amount (EGP):</Typography>
+          <Typography sx={{ mb: 2 }}>Enter the new deduction amount (Days):</Typography>
           <TextField
             fullWidth
             type="number"
@@ -341,7 +341,7 @@ export default function Deductions() {
             onChange={(e) => setEditDialog({ ...editDialog, amount: e.target.value })}
             variant="outlined"
             size="small"
-            slotProps={{ htmlInput: { min: 0 } }}
+            slotProps={{ htmlInput: { min: 0, step: "0.5" } }}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 0 }}>

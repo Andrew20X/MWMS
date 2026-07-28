@@ -37,6 +37,23 @@ public class AttendanceService : IAttendanceService
 
     public async Task DeleteMyAttendanceAsync(int employeeId)
     {
+        var myDeductions = await _deductionRepository.GetByEmployeeAsync(employeeId);
+        foreach (var d in myDeductions)
+        {
+            _deductionRepository.Delete(d);
+        }
+        await _deductionRepository.SaveChangesAsync();
+
+        var allLeaves = (await _leaveRequestRepository.GetAllAsync())
+            .Where(l => l.EmployeeId == employeeId && l.LinkedAttendanceId != null)
+            .ToList();
+        foreach (var l in allLeaves)
+        {
+            l.LinkedAttendanceId = null;
+            _leaveRequestRepository.Update(l);
+        }
+        await _leaveRequestRepository.SaveChangesAsync();
+
         var attendances = await _attendanceRepository.GetByEmployeeAsync(employeeId);
         foreach (var attendance in attendances)
         {
@@ -555,7 +572,9 @@ public class AttendanceService : IAttendanceService
                         }
                         else if (d.Status == PayrollStatus.Waived)
                         {
-                            deducDescList.Add("Deduction Rejected/Waived");
+                            var msg = "Deduction Rejected/Waived";
+                            if (!string.IsNullOrWhiteSpace(d.RejectionReason)) msg += $": {d.RejectionReason}";
+                            deducDescList.Add(msg);
                         }
                     }
                 }
@@ -596,7 +615,9 @@ public class AttendanceService : IAttendanceService
                         }
                         else if (d.Status == PayrollStatus.Waived)
                         {
-                            deducDescList.Add("Deduction Rejected/Waived");
+                            var msg = "Deduction Rejected/Waived";
+                            if (!string.IsNullOrWhiteSpace(d.RejectionReason)) msg += $": {d.RejectionReason}";
+                            deducDescList.Add(msg);
                         }
                     }
                 }
@@ -735,7 +756,9 @@ public class AttendanceService : IAttendanceService
                         }
                         else if (d.Status == PayrollStatus.Waived)
                         {
-                            deducDescList.Add("Deduction Rejected/Waived");
+                            var msg = "Deduction Rejected/Waived";
+                            if (!string.IsNullOrWhiteSpace(d.RejectionReason)) msg += $": {d.RejectionReason}";
+                            deducDescList.Add(msg);
                         }
                         }
                     }
@@ -776,7 +799,9 @@ public class AttendanceService : IAttendanceService
                         }
                         else if (d.Status == PayrollStatus.Waived)
                         {
-                            deducDescList.Add("Deduction Rejected/Waived");
+                            var msg = "Deduction Rejected/Waived";
+                            if (!string.IsNullOrWhiteSpace(d.RejectionReason)) msg += $": {d.RejectionReason}";
+                            deducDescList.Add(msg);
                         }
                         }
                     }

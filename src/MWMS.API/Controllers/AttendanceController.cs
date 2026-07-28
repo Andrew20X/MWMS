@@ -217,7 +217,7 @@ public class AttendanceController : ControllerBase
     {
         try
         {
-            var templatePath = @"D:\MWMS\TimeSheet\New Format.xlsx";
+            var templatePath = @"D:\MWMS\New Format Updated.xlsx";
             
             if (!System.IO.File.Exists(templatePath))
             {
@@ -250,7 +250,7 @@ public class AttendanceController : ControllerBase
             if (employeeIdClaim == null) return Unauthorized();
 
             var employeeId = int.Parse(employeeIdClaim);
-            var templatePath = @"D:\MWMS\TimeSheet\New Format.xlsx";
+            var templatePath = @"D:\MWMS\New Format Updated.xlsx";
             
             if (!System.IO.File.Exists(templatePath))
             {

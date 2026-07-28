@@ -106,7 +106,7 @@ public class EndOfDayAbsenceDetectorJob : BackgroundService
                     {
                         EmployeeId = employee.Id,
                         RelatedAttendance = absenceRecord,
-                        DeductionAmount = 150.0m, // standard daily rate
+                        DeductionAmount = 1.0m, // 1 day deduction
                         Reason = $"AWOL: Unexcused absence on {today}",
                         AppliedOnDate = DateTime.Now,
                         Status = PayrollStatus.PendingPayroll

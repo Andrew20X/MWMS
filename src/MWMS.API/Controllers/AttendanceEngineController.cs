@@ -98,7 +98,7 @@ public class AttendanceEngineController : ControllerBase
         {
             EmployeeId = ziad.Id,
             RelatedAttendance = absenceRecord,
-            DeductionAmount = 150.0m, // standard daily rate
+            DeductionAmount = 1.0m, // 1 day deduction
             Reason = $"AWOL: Unexcused absence on {today}",
             AppliedOnDate = DateTime.Now,
             Status = MWMS.Domain.Enums.PayrollStatus.PendingPayroll
@@ -150,7 +150,7 @@ public class AttendanceEngineController : ControllerBase
         foreach (var absence in expiredAbsences)
         {
             absence.AbsenceResolutionStatus = MWMS.Domain.Enums.AbsenceResolutionStatus.DeductionApplied;
-            decimal standardDailyRate = 150.0m;
+            decimal standardDailyRate = 1.0m;
 
             var deduction = new MWMS.Domain.Entities.SalaryDeduction
             {
@@ -166,7 +166,7 @@ public class AttendanceEngineController : ControllerBase
             count++;
 
             var subject = "Notice: Salary Deduction Applied";
-            var body = $"<p>Dear {absence.Employee.FirstName} {absence.Employee.LastName},</p><p>A salary deduction of ${standardDailyRate} has been applied to your upcoming payroll due to an unresolved absence on {absence.Date}.</p>";
+            var body = $"<p>Dear {absence.Employee.FirstName} {absence.Employee.LastName},</p><p>A salary deduction of {standardDailyRate} day(s) has been applied to your upcoming payroll due to an unresolved absence on {absence.Date}.</p>";
             
             if (!string.IsNullOrEmpty(absence.Employee.Email))
             {
