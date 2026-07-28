@@ -116,11 +116,16 @@ namespace MWMS.API.Services
                             continue;
                         }
 
-                        var emp = employees.FirstOrDefault(e => 
-                            (devUserId != 0 && e.DeviceUserId == devUserId) || 
-                            e.EmployeeCode == employeeCodeStr ||
-                            e.EmployeeCode == $"EMP-SYNC-{employeeCodeStr}" ||
-                            e.EmployeeCode == $"EMP-{employeeCodeStr}");
+                        var emp = employees
+                            .Where(e => 
+                                (devUserId != 0 && e.DeviceUserId == devUserId) || 
+                                e.EmployeeCode == employeeCodeStr ||
+                                e.EmployeeCode == $"EMP-SYNC-{employeeCodeStr}" ||
+                                e.EmployeeCode == $"EMP-{employeeCodeStr}")
+                            .OrderByDescending(e => !e.IsDeleted)
+                            .ThenByDescending(e => e.IsActive)
+                            .ThenByDescending(e => e.Id)
+                            .FirstOrDefault();
                         if (emp != null)
                         {
                             newLogs.Add(new RawAttendanceLog
