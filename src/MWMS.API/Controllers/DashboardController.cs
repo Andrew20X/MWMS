@@ -36,4 +36,18 @@ public class DashboardController : ControllerBase
         var liveList = await _dashboardService.GetLiveAttendanceAsync();
         return Ok(liveList);
     }
+
+    [HttpGet("late")]
+    public async Task<IActionResult> GetLateArrivals()
+    {
+        var list = await _dashboardService.GetLateArrivalsTodayAsync();
+        return Ok(list);
+    }
+
+    [HttpGet("absent")]
+    public async Task<IActionResult> GetAbsents()
+    {
+        var list = await _dashboardService.GetAbsentsTodayAsync();
+        return Ok(list);
+    }
 }

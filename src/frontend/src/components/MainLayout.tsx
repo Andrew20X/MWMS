@@ -88,14 +88,12 @@ export default function MainLayout() {
             </>
           )}
 
-          {!isManagement && (
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/corrections" onClick={() => setMobileOpen(false)}>
-                <ListItemIcon><CheckSquare color="#48657B" /></ListItemIcon>
-                <ListItemText primary="Corrections" />
-              </ListItemButton>
-            </ListItem>
-          )}
+          <ListItem disablePadding>
+            <ListItemButton component={Link} to="/corrections" onClick={() => setMobileOpen(false)}>
+              <ListItemIcon><CheckSquare color="#48657B" /></ListItemIcon>
+              <ListItemText primary="Corrections" />
+            </ListItemButton>
+          </ListItem>
 
           <ListItem disablePadding>
             <ListItemButton component={Link} to="/overtime" onClick={() => setMobileOpen(false)}>

@@ -214,12 +214,8 @@ public class LeaveService : ILeaveService
             return false;
         }
 
-        var formattedNote = $"\n\n* Approval Status: {decision}\n* Approved By: {approverName}\n* Approval Date: {DateTime.UtcNow:yyyy-MM-dd hh:mm tt}";
-        if (!string.IsNullOrEmpty(adminMessage))
-        {
-            formattedNote += $"\n* Admin Note: {adminMessage}";
-        }
-        request.Reason += formattedNote;
+        // The admin message is already stored in request.AdminMessage and approval history is recorded below.
+        // We no longer append this to request.Reason to preserve the employee's original reason.
 
         request.UpdatedAt = DateTime.UtcNow;
         _leaveRepository.Update(request);
@@ -278,12 +274,8 @@ public class LeaveService : ILeaveService
         request.Status = LeaveStatus.Rejected;
         request.AdminMessage = adminMessage;
         
-        var formattedNote = $"\n\n* Approval Status: Rejected\n* Rejected By: {approverName}\n* Rejection Date: {DateTime.UtcNow:yyyy-MM-dd hh:mm tt}";
-        if (!string.IsNullOrEmpty(adminMessage))
-        {
-            formattedNote += $"\n* Admin Note: {adminMessage}";
-        }
-        request.Reason += formattedNote;
+        // The admin message is already stored in request.AdminMessage and rejection history is recorded below.
+        // We no longer append this to request.Reason to preserve the employee's original reason.
 
         request.UpdatedAt = DateTime.UtcNow;
         _leaveRepository.Update(request);

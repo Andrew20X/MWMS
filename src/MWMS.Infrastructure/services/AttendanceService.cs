@@ -17,19 +17,22 @@ public class AttendanceService : IAttendanceService
     private readonly IOvertimeRepository _overtimeRepository;
     private readonly MWMS.Application.Interfaces.IGenericRepository<RawAttendanceLog> _rawLogRepository;
     private readonly ISalaryDeductionRepository _deductionRepository;
+    private readonly MWMS.Application.Interfaces.IGenericRepository<LeaveRequest> _leaveRequestRepository;
 
     public AttendanceService(
         IAttendanceRepository attendanceRepository, 
         IEmployeeRepository employeeRepository,
         IOvertimeRepository overtimeRepository,
         MWMS.Application.Interfaces.IGenericRepository<RawAttendanceLog> rawLogRepository,
-        ISalaryDeductionRepository deductionRepository)
+        ISalaryDeductionRepository deductionRepository,
+        MWMS.Application.Interfaces.IGenericRepository<LeaveRequest> leaveRequestRepository)
     {
         _attendanceRepository = attendanceRepository;
         _employeeRepository = employeeRepository;
         _overtimeRepository = overtimeRepository;
         _rawLogRepository = rawLogRepository;
         _deductionRepository = deductionRepository;
+        _leaveRequestRepository = leaveRequestRepository;
     }
 
     public async Task DeleteMyAttendanceAsync(int employeeId)
@@ -44,6 +47,23 @@ public class AttendanceService : IAttendanceService
 
     public async Task DeleteAllRawAttendanceAsync()
     {
+        // First delete dependent salary deductions to avoid FK constraint errors
+        var allDeductions = (await _deductionRepository.GetAllAsync()).ToList();
+        foreach (var d in allDeductions)
+        {
+            _deductionRepository.Delete(d);
+        }
+        await _deductionRepository.SaveChangesAsync();
+
+        // Unlink LeaveRequests to avoid FK constraint errors
+        var allLeaves = (await _leaveRequestRepository.GetAllAsync()).Where(l => l.LinkedAttendanceId != null).ToList();
+        foreach (var l in allLeaves)
+        {
+            l.LinkedAttendanceId = null;
+            _leaveRequestRepository.Update(l);
+        }
+        await _leaveRequestRepository.SaveChangesAsync();
+
         // Delete final processed attendances
         var allAttendances = (await _attendanceRepository.GetAttendancesByDateRangeAsync(DateOnly.MinValue, DateOnly.MaxValue)).ToList();
         

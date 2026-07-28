@@ -154,12 +154,8 @@ public class OvertimeController : ControllerBase
 
         request.AdminNote = adminNote;
         
-        var formattedNote = $"\n\n* Approval Status: {decision}\n* Approved By: {callerName}\n* Approval Date: {DateTime.UtcNow:yyyy-MM-dd hh:mm tt}";
-        if (!string.IsNullOrEmpty(adminNote))
-        {
-            formattedNote += $"\n* Admin Note: {adminNote}";
-        }
-        request.Reason += formattedNote;
+        // The admin message is already stored in request.AdminNote and approval history is recorded below.
+        // We no longer append this to request.Reason to preserve the employee's original reason.
 
         request.UpdatedAt = DateTime.UtcNow;
         _overtimeRepository.Update(request);
@@ -225,12 +221,8 @@ public class OvertimeController : ControllerBase
         request.Status = OvertimeRequest.StatusRejected;
         request.AdminNote = adminNote;
         
-        var formattedNote = $"\n\n* Approval Status: Rejected\n* Rejected By: {callerName}\n* Rejection Date: {DateTime.UtcNow:yyyy-MM-dd hh:mm tt}";
-        if (!string.IsNullOrEmpty(adminNote))
-        {
-            formattedNote += $"\n* Admin Note: {adminNote}";
-        }
-        request.Reason += formattedNote;
+        // The admin message is already stored in request.AdminNote and rejection history is recorded below.
+        // We no longer append this to request.Reason to preserve the employee's original reason.
 
         request.UpdatedAt = DateTime.UtcNow;
         _overtimeRepository.Update(request);

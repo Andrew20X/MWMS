@@ -124,13 +124,19 @@ public class AuthService : IAuthService
         if (employee == null)
             throw new InvalidOperationException("Employee not found.");
 
-        var existingUser = await _userRepository.GetByUsernameAsync($"MANAGER-SYNC-{employee.EmployeeCode}") ?? await _userRepository.GetByUsernameAsync($"EMP-SYNC-{employee.EmployeeCode}") ?? await _userRepository.GetByUsernameAsync(employee.EmployeeCode) ?? await _userRepository.GetByUsernameAsync(employee.Email ?? "");
+        var users = await _userRepository.GetAllAsync();
+        var existingUser = users.FirstOrDefault(u => 
+            !u.IsDeleted && !u.Username.StartsWith("EMP-SYNC") && !u.Username.StartsWith("MANAGER-SYNC") &&
+            ((!string.IsNullOrEmpty(employee.Email) && employee.Email != "(No Email)" && u.Email == employee.Email) ||
+             u.FullName == $"{employee.FirstName} {employee.LastName}"))
+            ?? users.FirstOrDefault(u => 
+                !u.IsDeleted && (u.Username == $"EMP-SYNC-{employee.EmployeeCode}" || u.Username == $"MANAGER-SYNC-{employee.EmployeeCode}"));
         
-        var role = existingUser?.Role ?? "Employee";
-        var username = role == "Manager" ? $"MANAGER-SYNC-{employee.EmployeeCode}" : $"EMP-SYNC-{employee.EmployeeCode}";
-
         if (existingUser == null)
         {
+            var role = employee.Subordinates != null && employee.Subordinates.Any() ? "Manager" : "Employee";
+            var username = role == "Manager" ? $"MANAGER-SYNC-{employee.EmployeeCode}" : $"EMP-SYNC-{employee.EmployeeCode}";
+            
             // Create user if not exists
             var user = new User
             {
@@ -145,7 +151,6 @@ public class AuthService : IAuthService
         }
         else
         {
-            existingUser.Username = username;
             existingUser.PasswordHash = _passwordHasher.Hash("measuresoft");
             _userRepository.Update(existingUser);
         }

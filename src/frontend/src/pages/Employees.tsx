@@ -78,20 +78,20 @@ export default function Employees() {
     emergencyLeaveUsed: 0
   });
 
-  const fetchEmployees = async () => {
-    setLoading(true);
+  const fetchEmployees = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const response = await axios.get('http://localhost:5222/api/Employees');
       setEmployees(response.data);
     } catch (err: any) {
       setError('Failed to load employees.');
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchEmployees();
+    fetchEmployees(true);
   }, []);
 
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
@@ -143,7 +143,7 @@ export default function Employees() {
     try {
       await axios.delete(`http://localhost:5222/api/Employees/${employeeToDelete}`);
       showMessage('Employee deleted successfully', 'success');
-      fetchEmployees();
+      fetchEmployees(false);
     } catch (err) {
       showMessage('Failed to delete employee. They might be tied to existing attendance records.', 'error');
     } finally {
@@ -187,7 +187,7 @@ export default function Employees() {
       }
       setOpen(false);
       showMessage('Employee saved successfully', 'success');
-      fetchEmployees();
+      fetchEmployees(false);
 
     } catch (err: any) {
       showMessage(err.response?.data?.error || 'Failed to save employee', 'error');
@@ -279,7 +279,7 @@ export default function Employees() {
       await axios.put(`http://localhost:5222/api/Users/${editingId}`, editUserForm);
       showMessage('User account updated successfully.', 'success');
       setEditUserOpen(false);
-      fetchEmployees();
+      fetchEmployees(false);
     } catch (err: any) {
       showMessage(err.response?.data?.error || 'Failed to update user account.', 'error');
     } finally {

@@ -78,11 +78,19 @@ public class AttendanceEngineService : IAttendanceEngineService
 
             if (punches.Count > 1)
             {
-                attendance.CheckOut = lastPunch;
+                var timeDiff = lastPunch.ToTimeSpan() - firstPunch.ToTimeSpan();
+                if (timeDiff.TotalMinutes >= 15)
+                {
+                    attendance.CheckOut = lastPunch;
+                }
+                else
+                {
+                    attendance.CheckOut = null;
+                }
             }
             else
             {
-                // Only one punch. Might be missing a checkout.
+                // Only one punch or punches are too close together. Might be missing a checkout.
                 attendance.CheckOut = null;
             }
 
@@ -173,9 +181,13 @@ public class AttendanceEngineService : IAttendanceEngineService
 
             if (punches.Count > 1 || (attendance.CheckIn.HasValue && lastPunch > attendance.CheckIn.Value))
             {
-                if (!attendance.CheckOut.HasValue || lastPunch > attendance.CheckOut.Value)
+                var timeDiff = lastPunch.ToTimeSpan() - attendance.CheckIn!.Value.ToTimeSpan();
+                if (timeDiff.TotalMinutes >= 15)
                 {
-                    attendance.CheckOut = lastPunch;
+                    if (!attendance.CheckOut.HasValue || lastPunch > attendance.CheckOut.Value)
+                    {
+                        attendance.CheckOut = lastPunch;
+                    }
                 }
             }
 

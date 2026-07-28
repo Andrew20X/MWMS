@@ -222,14 +222,8 @@ public class DeductionsController : ControllerBase
                       ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
                       ?? "Admin";
 
-        var formattedNote = $"\n\n* Approval Status: Rejected\n* Rejected By: {callerName}\n* Rejection Date: {DateTime.Now:yyyy-MM-dd hh:mm tt}";
-        if (!string.IsNullOrEmpty(request.RejectionReason))
-        {
-            formattedNote += $"\n* Admin Note: {request.RejectionReason}";
-        }
-        
-        // Append to Reason field for consistency
-        deduction.Reason += formattedNote;
+        // The admin message is already stored in request.RejectionReason and rejection history can be recorded elsewhere.
+        // We no longer append this to deduction.Reason to preserve the original reason.
 
         if (deduction.RelatedAttendance != null && deduction.RelatedAttendance.AbsenceResolutionStatus == AbsenceResolutionStatus.PendingResolution)
         {

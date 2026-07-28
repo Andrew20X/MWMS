@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Box, Typography, Paper, Chip, CircularProgress, Alert, Avatar, Divider, Button, Dialog, DialogTitle, DialogContent, IconButton } from '@mui/material';
-import { Users, Clock, AlertCircle, CheckCircle2, CalendarDays, ArrowUpRight, Megaphone, X, RefreshCw } from 'lucide-react';
+import { Users, Clock, AlertCircle, CheckCircle2, CalendarDays, ArrowUpRight, Megaphone, X, RefreshCw, Coffee } from 'lucide-react';
 
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -39,7 +39,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [openLiveDialog, setOpenLiveDialog] = useState(false);
+  const [openLateDialog, setOpenLateDialog] = useState(false);
+  const [openAbsentDialog, setOpenAbsentDialog] = useState(false);
+  const [lateList, setLateList] = useState<LiveAttendance[]>([]);
+  const [absentList, setAbsentList] = useState<LiveAttendance[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [fetchingDevice, setFetchingDevice] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -53,6 +58,45 @@ export default function Dashboard() {
       console.error("Failed to refresh live activity", err);
     } finally {
       setRefreshing(false);
+    }
+  };
+
+  const handleFetchDevice = async () => {
+    if (!user) return;
+    setFetchingDevice(true);
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      await axios.post('http://localhost:5222/api/Attendance/fetch-from-device', 
+        { startDate: todayStr, endDate: todayStr }, 
+        { headers: { Authorization: `Bearer ${user.token}` } }
+      );
+      await refreshLiveActivity();
+    } catch (error: any) {
+      console.error('Failed to fetch from device', error);
+    } finally {
+      setFetchingDevice(false);
+    }
+  };
+
+  const fetchLateList = async () => {
+    if (!user) return;
+    try {
+      const res = await axios.get('http://localhost:5222/api/Dashboard/late', { headers: { Authorization: `Bearer ${user.token}` } });
+      setLateList(res.data);
+      setOpenLateDialog(true);
+    } catch (err: any) {
+      console.error("Failed to load late list", err);
+    }
+  };
+
+  const fetchAbsentList = async () => {
+    if (!user) return;
+    try {
+      const res = await axios.get('http://localhost:5222/api/Dashboard/absent', { headers: { Authorization: `Bearer ${user.token}` } });
+      setAbsentList(res.data);
+      setOpenAbsentDialog(true);
+    } catch (err: any) {
+      console.error("Failed to load absent list", err);
     }
   };
 
@@ -121,7 +165,7 @@ export default function Dashboard() {
     return <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>;
   }
 
-  const statCards = [
+  const statCards: any[] = [
     { 
       title: 'Total Workforce', 
       value: stats?.totalEmployees ?? 0, 
@@ -142,6 +186,8 @@ export default function Dashboard() {
       icon: <Clock size={24} color="#F59E0B" />, 
       bgColor: 'rgba(245, 158, 11, 0.08)',
       borderColor: 'rgba(245, 158, 11, 0.2)',
+      actionText: 'View Late',
+      action: fetchLateList
     },
     { 
       title: 'Absent', 
@@ -149,6 +195,8 @@ export default function Dashboard() {
       icon: <AlertCircle size={24} color="#F43F5E" />, 
       bgColor: 'rgba(244, 63, 94, 0.08)',
       borderColor: 'rgba(244, 63, 94, 0.2)',
+      actionText: 'View Absents',
+      action: fetchAbsentList
     },
   ];
 
@@ -248,6 +296,16 @@ export default function Dashboard() {
               <Typography variant="body2" sx={{ color: '#64748B', fontWeight: 400 }}>
                 {stat.title}
               </Typography>
+              {stat.actionText && (
+                <Button 
+                  size="small" 
+                  variant="outlined" 
+                  onClick={stat.action} 
+                  sx={{ mt: 2, borderRadius: '8px', textTransform: 'none', borderColor: stat.borderColor, color: '#475569' }}
+                >
+                  {stat.actionText}
+                </Button>
+              )}
             </Paper>
           ))}
         </Box>
@@ -321,24 +379,53 @@ export default function Dashboard() {
                 bgcolor: '#FFFFFF',
                 flexGrow: 1
               }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 400, color: '#0F172A' }}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', gap: 2, mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 400, color: '#0F172A', whiteSpace: 'nowrap' }}>
                       Live Activity
                     </Typography>
-                    <IconButton onClick={refreshLiveActivity} size="small" disabled={refreshing}>
-                      <RefreshCw size={16} color={refreshing ? '#94A3B8' : '#64748B'} className={refreshing ? 'spin' : ''} />
-                    </IconButton>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(16, 185, 129, 0.1)', px: 1.5, py: 0.5, borderRadius: 4 }}>
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#10B981', animation: 'pulse 2s infinite' }} />
+                      <Typography variant="caption" sx={{ color: '#059669', fontWeight: 400 }}>Live</Typography>
+                    </Box>
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'rgba(16, 185, 129, 0.1)', px: 1.5, py: 0.5, borderRadius: 4 }}>
-                    <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#10B981', animation: 'pulse 2s infinite' }} />
-                    <Typography variant="caption" sx={{ color: '#059669', fontWeight: 400 }}>Live</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-end' } }}>
+                    <IconButton onClick={refreshLiveActivity} size="small" disabled={refreshing}>
+                      <RefreshCw size={18} color={refreshing ? '#94A3B8' : '#64748B'} className={refreshing ? 'spin' : ''} />
+                    </IconButton>
+                    <Button 
+                      variant="outlined" 
+                      size="small" 
+                      onClick={handleFetchDevice} 
+                      disabled={fetchingDevice}
+                      sx={{ textTransform: 'none', borderRadius: 2, flex: { xs: 1, sm: 'none' } }}
+                    >
+                      {fetchingDevice ? <CircularProgress size={16} sx={{ mr: 1 }} /> : 'Fetch Logs'}
+                    </Button>
                   </Box>
                 </Box>
                 
                 {liveList.length === 0 ? (
-                  <Box sx={{ textAlign: 'center', py: 4 }}>
-                    <Typography color="text.secondary" variant="body2">No one is currently clocked in.</Typography>
+                  <Box sx={{ textAlign: 'center', py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ 
+                      width: 80, 
+                      height: 80, 
+                      borderRadius: '50%', 
+                      bgcolor: 'rgba(241, 245, 249, 0.6)', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      mb: 1,
+                      boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
+                    }}>
+                      <Coffee size={36} color="#94A3B8" strokeWidth={1.5} />
+                    </Box>
+                    <Typography variant="h6" sx={{ color: '#475569', fontWeight: 500, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                      All quiet right now
+                    </Typography>
+                    <Typography color="text.secondary" variant="body2" sx={{ maxWidth: '80%', mx: 'auto', lineHeight: 1.6 }}>
+                      No one is currently clocked in. Live activity will appear here as soon as employees start their shifts.
+                    </Typography>
                   </Box>
                 ) : (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -454,6 +541,69 @@ export default function Dashboard() {
                 </Typography>
               </Box>
             ))}
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openLateDialog} onClose={() => setOpenLateDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'normal' }}>
+          Late Arrivals ({lateList.length})
+          <IconButton onClick={() => setOpenLateDialog(false)} size="small"><X size={20} /></IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            {lateList.length === 0 ? (
+              <Typography color="text.secondary" variant="body2" sx={{ textAlign: 'center', py: 2 }}>No late arrivals today.</Typography>
+            ) : (
+              lateList.map((emp) => (
+                <Box key={emp.employeeId} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', width: 40, height: 40, fontSize: '1rem', fontWeight: 400 }}>
+                    {emp.employeeName.charAt(0)}
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 400, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {emp.employeeName}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {emp.positionName}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 400, bgcolor: '#FFFBEB', px: 1.5, py: 0.5, borderRadius: '6px' }}>
+                    {formatTime12Hour(emp.checkInTime)}
+                  </Typography>
+                </Box>
+              ))
+            )}
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openAbsentDialog} onClose={() => setOpenAbsentDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'normal' }}>
+          Absent Employees ({absentList.length})
+          <IconButton onClick={() => setOpenAbsentDialog(false)} size="small"><X size={20} /></IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            {absentList.length === 0 ? (
+              <Typography color="text.secondary" variant="body2" sx={{ textAlign: 'center', py: 2 }}>No absents today.</Typography>
+            ) : (
+              absentList.map((emp) => (
+                <Box key={emp.employeeId} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(244, 63, 94, 0.1)', color: '#F43F5E', width: 40, height: 40, fontSize: '1rem', fontWeight: 400 }}>
+                    {emp.employeeName.charAt(0)}
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 400, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {emp.employeeName}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {emp.positionName}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))
+            )}
           </Box>
         </DialogContent>
       </Dialog>

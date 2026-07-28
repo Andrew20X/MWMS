@@ -27,8 +27,8 @@ public class DashboardService : IDashboardService
 
         var presentCount = todayAttendances.Count();
         
-        // Calculate late arrivals (CheckIn time > Shift StartTime)
-        var lateCount = todayAttendances.Count(a => a.CheckIn.HasValue && a.Employee?.Shift?.StartTime != null && a.CheckIn.Value > a.Employee.Shift.StartTime);
+        // Calculate late arrivals (CheckIn time > Shift StartTime + GraceMinutes)
+        var lateCount = todayAttendances.Count(a => a.CheckIn.HasValue && a.Employee?.Shift?.StartTime != null && a.CheckIn.Value > a.Employee.Shift.StartTime.AddMinutes(a.Employee.Shift.GraceMinutes));
 
         // Calculate absentees
         var absentCount = totalEmployees - presentCount;
@@ -59,8 +59,8 @@ public class DashboardService : IDashboardService
             var dailyAttendances = attendances.Where(a => a.Date == date && !a.IsDeleted).ToList();
 
             var presentCount = dailyAttendances.Count;
-            // The property in Dashboard is a.CheckIn > a.Employee?.Shift?.StartTime. In Engine it sets a.Status = Late.
-            var lateCount = dailyAttendances.Count(a => a.CheckIn.HasValue && a.Employee?.Shift?.StartTime != null && a.CheckIn.Value > a.Employee.Shift.StartTime);
+            // The property in Dashboard is a.CheckIn > a.Employee?.Shift?.StartTime + GraceMinutes. In Engine it sets a.Status = Late.
+            var lateCount = dailyAttendances.Count(a => a.CheckIn.HasValue && a.Employee?.Shift?.StartTime != null && a.CheckIn.Value > a.Employee.Shift.StartTime.AddMinutes(a.Employee.Shift.GraceMinutes));
             var absentCount = activeEmployeeCount - presentCount;
 
             trend.Add(new AttendanceTrendDto
@@ -95,5 +95,48 @@ public class DashboardService : IDashboardService
             .ToList();
 
         return liveList;
+    }
+    public async Task<IEnumerable<LiveAttendanceDto>> GetLateArrivalsTodayAsync()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var todayAttendances = await _attendanceRepository.GetTodayAttendanceAsync(today);
+
+        var lateList = todayAttendances
+            .Where(a => a.CheckIn.HasValue && a.Employee?.Shift?.StartTime != null && a.CheckIn.Value > a.Employee.Shift.StartTime.AddMinutes(a.Employee.Shift.GraceMinutes))
+            .Select(a => new LiveAttendanceDto
+            {
+                EmployeeId = a.EmployeeId,
+                EmployeeName = $"{a.Employee?.FirstName} {a.Employee?.LastName}",
+                PositionName = a.Employee?.Position?.Name ?? "General",
+                CheckInTime = a.CheckIn?.ToString("HH:mm") ?? "",
+                Status = "Late"
+            })
+            .OrderByDescending(a => a.CheckInTime)
+            .ToList();
+
+        return lateList;
+    }
+
+    public async Task<IEnumerable<LiveAttendanceDto>> GetAbsentsTodayAsync()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var todayAttendances = await _attendanceRepository.GetTodayAttendanceAsync(today);
+        var allEmployees = await _employeeRepository.GetAllAsync();
+        
+        var presentEmployeeIds = todayAttendances.Select(a => a.EmployeeId).ToHashSet();
+        
+        var absents = allEmployees
+            .Where(e => e.IsActive && !e.IsDeleted && !presentEmployeeIds.Contains(e.Id))
+            .Select(e => new LiveAttendanceDto
+            {
+                EmployeeId = e.Id,
+                EmployeeName = $"{e.FirstName} {e.LastName}",
+                PositionName = e.Position?.Name ?? "General",
+                CheckInTime = "",
+                Status = "Absent"
+            })
+            .ToList();
+
+        return absents;
     }
 }

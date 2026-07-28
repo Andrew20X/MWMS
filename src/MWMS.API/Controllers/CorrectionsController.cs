@@ -83,12 +83,8 @@ public class CorrectionsController : ControllerBase
         request.Status = "Approved";
         request.AdminNote = actionDto?.Note;
         
-        var formattedNote = $"\n\n* Approval Status: Approved\n* Approved By: {callerName}\n* Approval Date: {DateTime.UtcNow:yyyy-MM-dd hh:mm tt}";
-        if (!string.IsNullOrEmpty(actionDto?.Note))
-        {
-            formattedNote += $"\n* Admin Note: {actionDto.Note}";
-        }
-        request.Reason += formattedNote;
+        // The admin message is already stored in request.AdminNote and approval history can be recorded elsewhere.
+        // We no longer append this to request.Reason to preserve the employee's original reason.
 
         request.UpdatedAt = DateTime.UtcNow;
         _correctionRepository.Update(request);
@@ -173,12 +169,8 @@ public class CorrectionsController : ControllerBase
         request.Status = "Rejected";
         request.AdminNote = actionDto?.Note;
 
-        var formattedNote = $"\n\n* Approval Status: Rejected\n* Rejected By: {callerName}\n* Rejection Date: {DateTime.UtcNow:yyyy-MM-dd hh:mm tt}";
-        if (!string.IsNullOrEmpty(actionDto?.Note))
-        {
-            formattedNote += $"\n* Admin Note: {actionDto.Note}";
-        }
-        request.Reason += formattedNote;
+        // The admin message is already stored in request.AdminNote and rejection history can be recorded elsewhere.
+        // We no longer append this to request.Reason to preserve the employee's original reason.
 
         request.UpdatedAt = DateTime.UtcNow;
         _correctionRepository.Update(request);
