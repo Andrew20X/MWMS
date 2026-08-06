@@ -21,6 +21,10 @@ export default function ForceChangePassword() {
       setError("New passwords do not match.");
       return;
     }
+    if (newPassword === oldPassword) {
+      setError("New password cannot be the same as the current password.");
+      return;
+    }
     if (newPassword.length < 6) {
       setError("Password must be at least 6 characters.");
       return;

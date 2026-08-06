@@ -113,6 +113,9 @@ public class AuthService : IAuthService
         if (!_passwordHasher.Verify(oldPassword, user.PasswordHash))
             throw new InvalidOperationException("Incorrect current password.");
 
+        if (oldPassword == newPassword)
+            throw new InvalidOperationException("New password cannot be the same as the current password.");
+
         user.PasswordHash = _passwordHasher.Hash(newPassword);
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();

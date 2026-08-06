@@ -49,6 +49,11 @@ export default function ChangePasswordModal({ open, onClose }: ChangePasswordMod
       return;
     }
 
+    if (newPassword === oldPassword) {
+      setError("New password cannot be the same as the current password.");
+      return;
+    }
+
     if (newPassword.length < 6) {
       setError("New password must be at least 6 characters long.");
       return;
