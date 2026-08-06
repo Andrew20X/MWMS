@@ -20,6 +20,7 @@ export default function Announcements() {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({ title: '', content: '', type: 'Notice' });
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteAllConfirmOpen, setDeleteAllConfirmOpen] = useState(false);
   const [announcementToDelete, setAnnouncementToDelete] = useState<number | null>(null);
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
@@ -107,15 +108,32 @@ export default function Announcements() {
     }
   };
 
+  const handleDeleteAll = async () => {
+    try {
+      await axios.delete('http://localhost:5222/api/announcements/all');
+      setToast({ open: true, message: 'All announcements deleted', severity: 'success' });
+      fetchAnnouncements();
+      setDeleteAllConfirmOpen(false);
+    } catch (err) {
+      console.error(err);
+      setToast({ open: true, message: 'Failed to delete all announcements.', severity: 'error' });
+    }
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'normal', color: '#1E293B', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
           Manage Announcements
         </Typography>
-        <Button variant="contained" color="primary" startIcon={<Plus />} onClick={() => setOpen(true)} sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}>
-          Post Announcement
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+          <Button variant="outlined" color="error" onClick={() => setDeleteAllConfirmOpen(true)} disabled={announcements.length === 0} sx={{ borderRadius: 2, flex: { xs: 1, sm: 'none' } }}>
+            Delete All
+          </Button>
+          <Button variant="contained" color="primary" startIcon={<Plus />} onClick={() => setOpen(true)} sx={{ borderRadius: 2, flex: { xs: 1, sm: 'none' } }}>
+            Post Announcement
+          </Button>
+        </Box>
       </Box>
 
       {loading ? (
@@ -246,6 +264,18 @@ export default function Announcements() {
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setDeleteConfirmOpen(false)} color="inherit">Cancel</Button>
           <Button onClick={handleDelete} variant="contained" color="error">Delete</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete All Confirm Dialog */}
+      <Dialog open={deleteAllConfirmOpen} onClose={() => setDeleteAllConfirmOpen(false)}>
+        <DialogTitle sx={{ fontWeight: 'normal', color: 'error.main' }}>Delete All Announcements</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete ALL announcements? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setDeleteAllConfirmOpen(false)} color="inherit">Cancel</Button>
+          <Button onClick={handleDeleteAll} variant="contained" color="error">Delete All</Button>
         </DialogActions>
       </Dialog>
 

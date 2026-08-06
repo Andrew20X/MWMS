@@ -12,20 +12,20 @@ class Program
 
         using (var db = new AppDbContext(optionsBuilder.Options))
         {
-            var loay = db.Employees.Include(e => e.Position).FirstOrDefault(e => e.FirstName.Contains("Loay"));
-            if (loay != null)
+            var date = DateOnly.FromDateTime(DateTime.Today);
+            var todayAttendances = db.Attendances.Where(a => a.Date == date).ToList();
+            Console.WriteLine($"Found {todayAttendances.Count} attendances for today ({date}).");
+            
+            foreach (var a in todayAttendances)
             {
-                Console.WriteLine($"Found Loay: {loay.FirstName} {loay.LastName}, Position: {loay.Position?.Name}");
-            }
-            else
-            {
-                Console.WriteLine("Loay not found in Employees table.");
+                Console.WriteLine($"EmpId: {a.EmployeeId}, CheckIn: {a.CheckIn}, CheckOut: {a.CheckOut}");
             }
             
-            var user = db.Users.FirstOrDefault(u => u.FullName.Contains("Loay"));
-            if (user != null)
+            var allRaw = db.RawAttendanceLogs.Where(l => EF.Functions.DateDiffDay(l.PunchTime, DateTime.Now) == 0).ToList();
+            Console.WriteLine($"Found {allRaw.Count} raw logs for today.");
+            foreach (var r in allRaw)
             {
-                Console.WriteLine($"Found Loay in Users: {user.FullName}, Role: {user.Role}, Username: {user.Username}");
+                Console.WriteLine($"EmpId: {r.EmployeeId}, PunchTime: {r.PunchTime}, Processed: {r.IsProcessed}");
             }
         }
     }

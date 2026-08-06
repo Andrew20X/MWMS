@@ -31,6 +31,7 @@ public class AppDbContext : DbContext
     
     // Feature: Salary Deduction
     public DbSet<SalaryDeduction> SalaryDeductions => Set<SalaryDeduction>();
+    public DbSet<SubmissionComment> SubmissionComments => Set<SubmissionComment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

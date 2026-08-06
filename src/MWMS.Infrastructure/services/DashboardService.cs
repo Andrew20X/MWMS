@@ -139,4 +139,43 @@ public class DashboardService : IDashboardService
 
         return absents;
     }
+    public async Task<IEnumerable<LiveAttendanceDto>> GetPresentTodayAsync()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var todayAttendances = await _attendanceRepository.GetTodayAttendanceAsync(today);
+
+        var presentList = todayAttendances
+            .Select(a => new LiveAttendanceDto
+            {
+                EmployeeId = a.EmployeeId,
+                EmployeeName = $"{a.Employee?.FirstName} {a.Employee?.LastName}",
+                PositionName = a.Employee?.Position?.Name ?? "General",
+                CheckInTime = a.CheckIn?.ToString("HH:mm") ?? "",
+                Status = a.Status.ToString()
+            })
+            .OrderByDescending(a => a.CheckInTime)
+            .ToList();
+
+        return presentList;
+    }
+
+    public async Task<IEnumerable<LiveAttendanceDto>> GetWorkforceAsync()
+    {
+        var allEmployees = await _employeeRepository.GetAllAsync();
+        
+        var workforce = allEmployees
+            .Where(e => e.IsActive && !e.IsDeleted)
+            .Select(e => new LiveAttendanceDto
+            {
+                EmployeeId = e.Id,
+                EmployeeName = $"{e.FirstName} {e.LastName}",
+                PositionName = e.Position?.Name ?? "General",
+                CheckInTime = "",
+                Status = "Active"
+            })
+            .OrderBy(e => e.EmployeeName)
+            .ToList();
+
+        return workforce;
+    }
 }

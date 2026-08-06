@@ -9,16 +9,45 @@ class Program
         using (SqlConnection connection = new SqlConnection(connectionString))
         {
             connection.Open();
-            string sql = "SELECT Id, EmployeeCode, FirstName, LastName, Email FROM Employees";
-            using (SqlCommand command = new SqlCommand(sql, connection))
+            string[] tables = { "LeaveRequests", "OvertimeRequests", "CorrectionRequests", "SalaryDeductions" };
+            
+            foreach (var table in tables)
             {
-                using (SqlDataReader reader = command.ExecuteReader())
+                int count = 0;
+                string sql = $"SELECT Id, Reason FROM {table}";
+                using (SqlCommand command = new SqlCommand(sql, connection))
                 {
-                    while (reader.Read())
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        Console.WriteLine($"Id: {reader["Id"]}, Code: {reader["EmployeeCode"]}, Name: {reader["FirstName"]} {reader["LastName"]}, Email: {reader["Email"]}");
+                        var updates = new System.Collections.Generic.List<Tuple<int, string>>();
+                        while (reader.Read())
+                        {
+                            int id = reader.GetInt32(0);
+                            string reason = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                            
+                            int index = reason.IndexOf("* Approval Status:");
+                            if (index >= 0)
+                            {
+                                string newReason = reason.Substring(0, index).TrimEnd();
+                                updates.Add(Tuple.Create(id, newReason));
+                            }
+                        }
+                        reader.Close();
+                        
+                        foreach (var update in updates)
+                        {
+                            string updateSql = $"UPDATE {table} SET Reason = @r WHERE Id = @i";
+                            using (SqlCommand updateCmd = new SqlCommand(updateSql, connection))
+                            {
+                                updateCmd.Parameters.AddWithValue("@r", update.Item2);
+                                updateCmd.Parameters.AddWithValue("@i", update.Item1);
+                                updateCmd.ExecuteNonQuery();
+                                count++;
+                            }
+                        }
                     }
                 }
+                Console.WriteLine($"Updated {count} rows in {table}");
             }
         }
     }

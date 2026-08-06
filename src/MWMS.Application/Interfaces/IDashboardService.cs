@@ -13,4 +13,8 @@ public interface IDashboardService
     Task<IEnumerable<LiveAttendanceDto>> GetLateArrivalsTodayAsync();
     
     Task<IEnumerable<LiveAttendanceDto>> GetAbsentsTodayAsync();
+
+    Task<IEnumerable<LiveAttendanceDto>> GetPresentTodayAsync();
+    
+    Task<IEnumerable<LiveAttendanceDto>> GetWorkforceAsync();
 }

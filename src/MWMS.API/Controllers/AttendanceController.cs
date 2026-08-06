@@ -6,7 +6,7 @@ using MWMS.Application.Interfaces;
 namespace MWMS.API.Controllers;
 
 [ApiController]
-[Authorize]
+//[Authorize]
 [Route("api/[controller]")]
 public class AttendanceController : ControllerBase
 {
@@ -310,16 +310,25 @@ public class AttendanceController : ControllerBase
     }
 
     [HttpPost("upload-final/me")]
-    public async Task<IActionResult> UploadFinalTimesheet(IFormFile file)
+    public async Task<IActionResult> UploadFinalTimesheet(List<IFormFile> files)
     {
         var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
         if (employeeIdClaim == null) return Unauthorized();
 
-        if (file == null || file.Length == 0)
+        if (files == null || files.Count == 0)
             return BadRequest("File is required.");
 
-        if (!file.FileName.EndsWith(".xlsx"))
-            return BadRequest("Only .xlsx files are supported.");
+        var deadline = GetCurrentDeadline();
+        if (deadline.HasValue && DateTime.Now > deadline.Value)
+        {
+            return BadRequest($"The submission deadline ({deadline.Value:g}) has passed. You can no longer submit timesheets.");
+        }
+
+        foreach (var file in files)
+        {
+            if (!file.FileName.EndsWith(".xlsx"))
+                return BadRequest("Only .xlsx files are supported.");
+        }
 
         try
         {
@@ -334,16 +343,18 @@ public class AttendanceController : ControllerBase
             var employeeCode = employee?.EmployeeCode ?? employeeIdClaim;
 
             var baseCode = employeeCode.StartsWith("EMP-") ? employeeCode : $"EMP-{employeeCode}";
-            var monthName = DateTime.Now.ToString("MMMM"); // e.g., July
-            var monthNum = DateTime.Now.ToString("MM");    // e.g., 07
-            var year = DateTime.Now.ToString("yyyy");      // e.g., 2026
             
-            var fileName = $"{baseCode}_{monthName}_{monthNum}_{year}.xlsx";
-            var savePath = Path.Combine(saveDirectory, fileName);
-
-            using (var stream = new FileStream(savePath, FileMode.Create))
+            foreach (var file in files)
             {
-                await file.CopyToAsync(stream);
+                var originalName = Path.GetFileName(file.FileName);
+                // Ensure the file name is unique to the employee but keeps their original file name context
+                var fileName = originalName.StartsWith(baseCode) ? originalName : $"{baseCode}_{originalName}";
+                var savePath = Path.Combine(saveDirectory, fileName);
+
+                using (var stream = new FileStream(savePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
             }
 
             return Ok(new { message = "Timesheet successfully submitted to HR." });
@@ -356,11 +367,18 @@ public class AttendanceController : ControllerBase
 
     [HttpGet("submitted")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetSubmittedTimesheets()
+    public async Task<IActionResult> GetSubmittedTimesheets([FromServices] MWMS.Persistence.Context.AppDbContext db)
     {
         try
         {
             var result = await _attendanceService.GetSubmittedTimesheetsAsync();
+            var comments = db.SubmissionComments.Where(c => !c.IsDeleted).ToList();
+            foreach (var item in result)
+            {
+                var itemComments = comments.Where(c => c.FileName == item.FileName).OrderByDescending(c => c.CreatedAt).ToList();
+                item.CommentCount = itemComments.Count;
+                item.LatestComment = itemComments.FirstOrDefault()?.CommentText;
+            }
             return Ok(result);
         }
         catch (Exception ex)
@@ -441,6 +459,7 @@ public class AttendanceController : ControllerBase
         public DateTime EndDate { get; set; }
     }
 
+    [Authorize(Roles = "Manager")]
     [HttpPost("fetch-from-device")]
     public async Task<IActionResult> FetchFromDevice([FromBody] FetchDeviceRequest request, [FromServices] MWMS.API.Services.IZKTecoService zkTecoService)
     {
@@ -465,6 +484,216 @@ public class AttendanceController : ControllerBase
         catch (Exception ex)
         {
             return StatusCode(500, $"Failed to connect or fetch from device: {ex.Message}");
+        }
+    }
+
+    // --- Settings and My Submissions ---
+
+    private DateTime? GetCurrentDeadline()
+    {
+        var settingsPath = @"D:\MWMS\submission_settings.json";
+        if (System.IO.File.Exists(settingsPath))
+        {
+            try
+            {
+                var content = System.IO.File.ReadAllText(settingsPath);
+                var obj = System.Text.Json.JsonDocument.Parse(content);
+                if (obj.RootElement.TryGetProperty("deadline", out var deadlineEl) && deadlineEl.ValueKind == System.Text.Json.JsonValueKind.String)
+                {
+                    if (DateTime.TryParse(deadlineEl.GetString(), out var d)) return d;
+                }
+            } catch { }
+        }
+        return null;
+    }
+
+    [HttpGet("settings")]
+    public IActionResult GetSettings()
+    {
+        return Ok(new { deadline = GetCurrentDeadline() });
+    }
+
+    public class UpdateSettingsRequest
+    {
+        public DateTime? Deadline { get; set; }
+    }
+
+    [HttpPost("settings")]
+    [Authorize(Roles = "Admin")]
+    public IActionResult UpdateSettings([FromBody] UpdateSettingsRequest request)
+    {
+        var settingsPath = @"D:\MWMS\submission_settings.json";
+        System.IO.File.WriteAllText(settingsPath, System.Text.Json.JsonSerializer.Serialize(new { deadline = request.Deadline }));
+        return Ok(new { message = "Settings updated successfully" });
+    }
+
+    [HttpGet("submitted/my-timesheets")]
+    public async Task<IActionResult> GetMyTimesheets()
+    {
+        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
+        if (employeeIdClaim == null) return Unauthorized();
+        
+        var employeeRepository = HttpContext.RequestServices.GetRequiredService<MWMS.Application.Interfaces.IEmployeeRepository>();
+        var employee = await employeeRepository.GetByIdAsync(int.Parse(employeeIdClaim));
+        var employeeCode = employee?.EmployeeCode ?? employeeIdClaim;
+        var baseCode = employeeCode.StartsWith("EMP-") ? employeeCode : $"EMP-{employeeCode}";
+
+        var saveDirectory = @"D:\MWMS\SubmittedTimesheets";
+        if (!Directory.Exists(saveDirectory)) return Ok(new List<object>());
+
+        var files = Directory.GetFiles(saveDirectory)
+            .Select(f => new FileInfo(f))
+            .Where(f => f.Name.StartsWith(baseCode + "_"))
+            .Select(f => new
+            {
+                fileName = f.Name,
+                submittedAt = f.CreationTime,
+                size = f.Length
+            })
+            .OrderByDescending(f => f.submittedAt)
+            .ToList();
+
+        return Ok(files);
+    }
+
+    [HttpGet("submitted/comments/{fileName}")]
+    public async Task<IActionResult> GetSubmissionComments(string fileName, [FromServices] MWMS.Persistence.Context.AppDbContext db)
+    {
+        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
+        var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+        if (employeeIdClaim == null && roleClaim != "Admin") return Unauthorized();
+
+        var comments = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            db.SubmissionComments
+            .Where(c => c.FileName == fileName)
+            .OrderBy(c => c.CreatedAt)
+            .Select(c => new {
+                c.Id,
+                CommentText = c.CommentText.StartsWith("[ADMIN] ") ? c.CommentText.Substring(8) : c.CommentText,
+                c.CreatedAt,
+                Author = c.CommentText.StartsWith("[ADMIN] ") ? "System Admin" : c.Employee.FirstName + " " + c.Employee.LastName,
+                c.EmployeeId
+            })
+        );
+
+        return Ok(comments);
+    }
+
+    public class AddCommentRequest {
+        public string CommentText { get; set; }
+    }
+
+    [HttpPost("submitted/comments/{fileName}")]
+    public async Task<IActionResult> AddSubmissionComment(string fileName, [FromBody] AddCommentRequest request, [FromServices] MWMS.Persistence.Context.AppDbContext db)
+    {
+        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
+        var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+        if (employeeIdClaim == null && roleClaim != "Admin") return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(request.CommentText)) return BadRequest("Comment text is required.");
+
+        int finalEmployeeId;
+
+        if (employeeIdClaim != null)
+        {
+            finalEmployeeId = int.Parse(employeeIdClaim);
+        }
+        else 
+        {
+            var parts = fileName.Split('_');
+            var empCodePart = parts[0].Replace("EMP-", "");
+            var fileOwner = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+                db.Employees, e => e.EmployeeCode == empCodePart);
+            
+            if (fileOwner != null) {
+                finalEmployeeId = fileOwner.Id;
+                request.CommentText = "[ADMIN] " + request.CommentText;
+            } else {
+                return BadRequest("Could not determine file owner to attach comment.");
+            }
+        }
+
+        var comment = new MWMS.Domain.Entities.SubmissionComment
+        {
+            EmployeeId = finalEmployeeId,
+            FileName = fileName,
+            CommentText = request.CommentText
+        };
+
+        db.SubmissionComments.Add(comment);
+        await db.SaveChangesAsync();
+
+        var employee = await db.Employees.FindAsync(finalEmployeeId);
+        return Ok(new {
+            comment.Id,
+            CommentText = comment.CommentText.StartsWith("[ADMIN] ") ? comment.CommentText.Substring(8) : comment.CommentText,
+            comment.CreatedAt,
+            Author = comment.CommentText.StartsWith("[ADMIN] ") ? "System Admin" : (employee?.FirstName + " " + employee?.LastName),
+            comment.EmployeeId
+        });
+    }
+
+    [HttpDelete("submitted/comments/{commentId}")]
+    public async Task<IActionResult> DeleteSubmissionComment(int commentId, [FromServices] MWMS.Persistence.Context.AppDbContext db)
+    {
+        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
+        var roleClaim = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+        if (employeeIdClaim == null && roleClaim != "Admin") return Unauthorized();
+
+        var comment = await db.SubmissionComments.FindAsync(commentId);
+        if (comment == null) return NotFound();
+
+        bool isAdminComment = comment.CommentText.StartsWith("[ADMIN] ");
+
+        if (roleClaim == "Admin")
+        {
+            if (!isAdminComment) return Forbid("Admin can only delete admin comments.");
+        }
+        else
+        {
+            if (isAdminComment) return Forbid("Employees cannot delete admin comments.");
+            if (employeeIdClaim != null && comment.EmployeeId.ToString() != employeeIdClaim)
+            {
+                return Forbid("You can only delete your own comments.");
+            }
+        }
+
+        db.SubmissionComments.Remove(comment);
+        await db.SaveChangesAsync();
+
+        return Ok(new { message = "Comment deleted successfully." });
+    }
+
+    [HttpDelete("submitted/my-timesheets/{fileName}")]
+    public async Task<IActionResult> DeleteMyTimesheet(string fileName)
+    {
+        var employeeIdClaim = User.FindFirst("EmployeeId")?.Value;
+        if (employeeIdClaim == null) return Unauthorized();
+        
+        var employeeRepository = HttpContext.RequestServices.GetRequiredService<MWMS.Application.Interfaces.IEmployeeRepository>();
+        var employee = await employeeRepository.GetByIdAsync(int.Parse(employeeIdClaim));
+        var employeeCode = employee?.EmployeeCode ?? employeeIdClaim;
+        var baseCode = employeeCode.StartsWith("EMP-") ? employeeCode : $"EMP-{employeeCode}";
+
+        if (!fileName.StartsWith(baseCode + "_"))
+        {
+            return Forbid("You can only delete your own timesheets.");
+        }
+
+        var filePath = Path.Combine(@"D:\MWMS\SubmittedTimesheets", fileName);
+        if (!System.IO.File.Exists(filePath)) return NotFound("File not found.");
+
+        try
+        {
+            System.IO.File.Delete(filePath);
+            return Ok(new { message = "Timesheet deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"An error occurred: {ex.Message}");
         }
     }
 }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Typography, Box, Paper, Button, Alert, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, Checkbox } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
-import { Download, Trash } from 'lucide-react';
+import { Download, Trash, MessageSquare } from 'lucide-react';
 import axios from 'axios';
 
 
@@ -16,6 +16,12 @@ export default function Timesheets() {
   
   const [submittedFiles, setSubmittedFiles] = useState<any[]>([]);
   const [loadingSubmitted, setLoadingSubmitted] = useState(false);
+
+  const [openComments, setOpenComments] = useState(false);
+  const [commentsFileName, setCommentsFileName] = useState('');
+  const [commentsList, setCommentsList] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState('');
+  const [addingComment, setAddingComment] = useState(false);
 
   const fetchSubmitted = async () => {
     setLoadingSubmitted(true);
@@ -122,6 +128,47 @@ export default function Timesheets() {
     }
   };
 
+  const handleViewComments = async (fileName: string) => {
+    setCommentsFileName(fileName);
+    setOpenComments(true);
+    setCommentsList([]);
+    try {
+      const res = await axios.get(`http://localhost:5222/api/Attendance/submitted/comments/${fileName}`, {
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
+      setCommentsList(res.data);
+    } catch(err) {
+      console.error(err);
+    }
+  };
+
+  const handleAddAdminComment = async () => {
+    if (!newComment.trim() || !commentsFileName) return;
+    setAddingComment(true);
+    try {
+      const res = await axios.post(`http://localhost:5222/api/Attendance/submitted/comments/${commentsFileName}`, { commentText: newComment }, {
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
+      setCommentsList([...commentsList, res.data]);
+      setNewComment('');
+    } catch(err) {
+      console.error(err);
+    } finally {
+      setAddingComment(false);
+    }
+  };
+
+  const handleDeleteAdminComment = async (commentId: number) => {
+    try {
+      await axios.delete(`http://localhost:5222/api/Attendance/submitted/comments/${commentId}`, {
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
+      setCommentsList(commentsList.filter(c => c.id !== commentId));
+    } catch(err) {
+      console.error(err);
+    }
+  };
+
   return (
     <Box>
       {message && <Alert severity={message.type} sx={{ mb: 3 }} onClose={() => setMessage(null)}>{message.text}</Alert>}
@@ -165,7 +212,7 @@ export default function Timesheets() {
                 ) : submittedFiles.length === 0 ? (
                   <TableRow><TableCell colSpan={5} align="center" sx={{ py: 5 }}><Typography color="text.secondary">No submitted timesheets found.</Typography></TableCell></TableRow>
                 ) : (
-                  submittedFiles.map((file, idx) => (
+                  submittedFiles.map((file: any, idx: number) => (
                     <TableRow key={idx}>
                       <TableCell padding="checkbox">
                         <Checkbox
@@ -177,7 +224,35 @@ export default function Timesheets() {
                       <TableCell>{new Date(file.submittedAt).toLocaleString()}</TableCell>
                       <TableCell>{Math.round(file.fileSizeBytes / 1024)} KB</TableCell>
                       <TableCell align="right">
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 1 }}>
+                          <Box 
+                            onClick={() => handleViewComments(file.fileName)} 
+                            sx={{ 
+                              cursor: 'pointer', 
+                              bgcolor: file.commentCount > 0 ? '#f0f9ff' : 'transparent',
+                              p: 0.5,
+                              px: 1,
+                              borderRadius: 1,
+                              border: '1px solid',
+                              borderColor: file.commentCount > 0 ? '#bae6fd' : '#e2e8f0',
+                              display: 'flex',
+                              alignItems: 'center',
+                              '&:hover': { bgcolor: file.commentCount > 0 ? '#e0f2fe' : '#f8f9fa' }
+                            }}
+                          >
+                            {file.latestComment ? (
+                              <Typography variant="caption" sx={{ color: '#0284c7', fontWeight: 'bold', maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center' }}>
+                                <MessageSquare size={14} style={{ marginRight: '6px' }} />
+                                "{file.latestComment}" {file.commentCount > 1 && `(+${file.commentCount - 1})`}
+                              </Typography>
+                            ) : (
+                              <Typography variant="caption" sx={{ color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+                                <MessageSquare size={14} style={{ marginRight: '6px' }} />
+                                Add comment...
+                              </Typography>
+                            )}
+                          </Box>
+
                           <Button variant="outlined" size="small" startIcon={<Download size={16} />} onClick={() => handleDownloadSubmitted(file.fileName)}>
                             Download
                           </Button>
@@ -193,8 +268,6 @@ export default function Timesheets() {
             </Table>
           </TableContainer>
         </Box>
-
-
 
       <Dialog open={openDelete} onClose={() => setOpenDelete(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ color: 'error.main', fontWeight: 'normal' }}>Delete Timesheet</DialogTitle>
@@ -222,11 +295,50 @@ export default function Timesheets() {
         </DialogActions>
       </Dialog>
 
+      <Dialog open={openComments} onClose={() => setOpenComments(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Submission Comments</DialogTitle>
+        <DialogContent dividers>
+          {commentsList.map((c, i) => (
+            <Box key={i} sx={{ mb: 2, pb: 1, borderBottom: '1px solid #f1f3f5' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{c.author} <span style={{ fontWeight: 'normal', color: '#6c757d', fontSize: '0.85em' }}>- {new Date(c.createdAt).toLocaleString()}</span></Typography>
+                  <Typography variant="body2">{c.commentText}</Typography>
+                </Box>
+                {c.author === 'System Admin' && (
+                  <Button size="small" color="error" onClick={() => handleDeleteAdminComment(c.id)} sx={{ minWidth: 'auto', p: 0.5, textTransform: 'none', fontSize: '0.75rem' }}>
+                    Delete
+                  </Button>
+                )}
+              </Box>
+            </Box>
+          ))}
+          {commentsList.length === 0 && <Typography variant="body2" sx={{ color: '#6c757d', mb: 2 }}>No comments yet.</Typography>}
+          
+          <Box sx={{ mt: 2 }}>
+            <textarea 
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Add a comment..."
+              style={{ width: '100%', minHeight: '80px', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px', marginBottom: '8px' }}
+            />
+            <Button 
+              variant="contained" 
+              size="small" 
+              onClick={handleAddAdminComment} 
+              disabled={addingComment || !newComment.trim()}
+              sx={{ bgcolor: '#0069d9', textTransform: 'none', boxShadow: 'none' }}
+            >
+              {addingComment ? 'Saving...' : 'Save comment'}
+            </Button>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenComments(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
 
     </Box>
   );
 }
-
-
-
-

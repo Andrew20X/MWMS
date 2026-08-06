@@ -19,6 +19,7 @@ public class AttendanceServiceTests
     private readonly Mock<IOvertimeRepository> _overtimeRepositoryMock;
     private readonly Mock<IGenericRepository<RawAttendanceLog>> _rawLogRepositoryMock;
     private readonly Mock<ISalaryDeductionRepository> _deductionRepositoryMock;
+    private readonly Mock<IGenericRepository<LeaveRequest>> _leaveRequestRepositoryMock;
     private readonly AttendanceService _sut;
 
     public AttendanceServiceTests()
@@ -28,13 +29,15 @@ public class AttendanceServiceTests
         _overtimeRepositoryMock = new Mock<IOvertimeRepository>();
         _rawLogRepositoryMock = new Mock<IGenericRepository<RawAttendanceLog>>();
         _deductionRepositoryMock = new Mock<ISalaryDeductionRepository>();
+        _leaveRequestRepositoryMock = new Mock<IGenericRepository<LeaveRequest>>();
 
         _sut = new AttendanceService(
             _attendanceRepositoryMock.Object,
             _employeeRepositoryMock.Object,
             _overtimeRepositoryMock.Object,
             _rawLogRepositoryMock.Object,
-            _deductionRepositoryMock.Object);
+            _deductionRepositoryMock.Object,
+            _leaveRequestRepositoryMock.Object);
     }
 
     [Fact]

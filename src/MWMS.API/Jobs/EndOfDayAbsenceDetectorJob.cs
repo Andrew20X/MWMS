@@ -23,23 +23,11 @@ public class EndOfDayAbsenceDetectorJob : BackgroundService
         {
             try
             {
-                // In a real app, you'd use a robust scheduler like Quartz.NET to run at exactly 11:59 PM.
-                // For simplicity, we delay until the end of the day or run periodically.
-                // We'll simulate a daily run by checking every hour (or use a daily delay).
+                // Run absence detection immediately
+                await RunAbsenceDetectionAsync(stoppingToken);
                 
-                var now = DateTime.Now;
-                // If it's near midnight, run logic (simulated for simplicity, we'll just run it)
-                if (now.Hour == 23)
-                {
-                    await RunAbsenceDetectionAsync(stoppingToken);
-                    // Sleep for 24 hours to prevent running multiple times
-                    await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
-                }
-                else
-                {
-                    // Check every 10 minutes to see if it's 23:00
-                    await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken);
-                }
+                // Sleep for 2 hours before checking again
+                await Task.Delay(TimeSpan.FromHours(2), stoppingToken);
             }
             catch (OperationCanceledException)
             {
@@ -57,13 +45,8 @@ public class EndOfDayAbsenceDetectorJob : BackgroundService
     private async Task RunAbsenceDetectionAsync(CancellationToken stoppingToken)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
-        
-        // Skip weekends (Friday and Saturday)
-        if (today.DayOfWeek == DayOfWeek.Friday || today.DayOfWeek == DayOfWeek.Saturday)
-        {
-            _logger.LogInformation("Absence detection skipped for weekend ({DayOfWeek}).", today.DayOfWeek);
-            return;
-        }
+        var startDate = today.AddDays(-7);
+        var currentHour = DateTime.Now.Hour;
 
         using var scope = _serviceProvider.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -74,68 +57,83 @@ public class EndOfDayAbsenceDetectorJob : BackgroundService
 
         foreach (var employee in employees)
         {
-            // Check if there is an attendance record for today
-            var hasAttendance = await dbContext.Attendances
-                .AnyAsync(a => a.EmployeeId == employee.Id && a.Date == today, stoppingToken);
-
-            if (!hasAttendance)
+            for (var date = startDate; date <= today; date = date.AddDays(1))
             {
-                // Check if they have an approved leave for today
-                var hasLeave = await dbContext.LeaveRequests
-                    .AnyAsync(l => l.EmployeeId == employee.Id && 
-                                   l.StartDate <= today && l.EndDate >= today &&
-                                   l.Status == LeaveStatus.Approved, stoppingToken);
+                // Skip checking today until 11 PM (23:00)
+                if (date == today && currentHour < 23)
+                    continue;
 
-                if (!hasLeave)
+                // Skip weekends (Friday and Saturday)
+                if (date.DayOfWeek == DayOfWeek.Friday || date.DayOfWeek == DayOfWeek.Saturday)
+                    continue;
+
+                // Skip dates before the employee was hired
+                if (date < employee.HireDate)
+                    continue;
+
+                // Check if there is an attendance record for this date
+                var hasAttendance = await dbContext.Attendances
+                    .AnyAsync(a => a.EmployeeId == employee.Id && a.Date == date, stoppingToken);
+
+                if (!hasAttendance)
                 {
-                    // Employee is absent without leave
-                    var absenceRecord = new Attendance
-                    {
-                        EmployeeId = employee.Id,
-                        Date = today,
-                        Status = AttendanceStatus.Absent,
-                        IsUnexcused = true,
-                        AbsenceResolutionStatus = AbsenceResolutionStatus.PendingResolution,
-                        DeadlineForLeaveRequest = DateTime.Now.AddDays(2)
-                    };
+                    // Check if they have an approved leave for this date
+                    var hasLeave = await dbContext.LeaveRequests
+                        .AnyAsync(l => l.EmployeeId == employee.Id && 
+                                       l.StartDate <= date && l.EndDate >= date &&
+                                       l.Status == LeaveStatus.Approved, stoppingToken);
 
-                    dbContext.Attendances.Add(absenceRecord);
-
-                    // Create the deduction immediately on the same day
-                    var deduction = new SalaryDeduction
+                    if (!hasLeave)
                     {
-                        EmployeeId = employee.Id,
-                        RelatedAttendance = absenceRecord,
-                        DeductionAmount = 1.0m, // 1 day deduction
-                        Reason = $"AWOL: Unexcused absence on {today}",
-                        AppliedOnDate = DateTime.Now,
-                        Status = PayrollStatus.PendingPayroll
-                    };
-                    dbContext.SalaryDeductions.Add(deduction);
-
-                    // Create Warning Announcement
-                    var announcement = new Announcement
-                    {
-                        Title = "Warning: Unexcused Absence",
-                        Content = $"You were absent on {today} without a leave request. A salary deduction is pending admin review.",
-                        Type = "Notice",
-                        TargetEmployeeId = employee.Id
-                    };
-                    dbContext.Announcements.Add(announcement);
-
-                    // Send email warning
-                    var subject = "Action Required: Pending Salary Deduction";
-                    var body = $"<p>Dear {employee.FirstName} {employee.LastName},</p><p>You were marked absent today ({today}) and did not submit a leave request. A salary deduction is currently pending admin review.</p>";
-                    
-                    if (!string.IsNullOrEmpty(employee.Email))
-                    {
-                        try 
+                        // Employee is absent without leave
+                        var absenceRecord = new Attendance
                         {
-                            await emailService.SendEmailAsync(employee.Email, subject, body);
-                        }
-                        catch (Exception ex)
+                            EmployeeId = employee.Id,
+                            Date = date,
+                            Status = AttendanceStatus.Absent,
+                            IsUnexcused = true,
+                            AbsenceResolutionStatus = AbsenceResolutionStatus.PendingResolution,
+                            DeadlineForLeaveRequest = DateTime.Now.AddDays(2)
+                        };
+
+                        dbContext.Attendances.Add(absenceRecord);
+
+                        // Create the deduction immediately on the same day
+                        var deduction = new SalaryDeduction
                         {
-                            _logger.LogError(ex, "Failed to send absence warning to {Email}", employee.Email);
+                            EmployeeId = employee.Id,
+                            RelatedAttendance = absenceRecord,
+                            DeductionAmount = 1.0m, // 1 day deduction
+                            Reason = $"AWOL: Unexcused absence on {date}",
+                            AppliedOnDate = DateTime.Now,
+                            Status = PayrollStatus.PendingPayroll
+                        };
+                        dbContext.SalaryDeductions.Add(deduction);
+
+                        // Create Warning Announcement
+                        var announcement = new Announcement
+                        {
+                            Title = "Warning: Unexcused Absence",
+                            Content = $"You were absent on {date} without a leave request. A salary deduction is pending admin review.",
+                            Type = "Notice",
+                            TargetEmployeeId = employee.Id
+                        };
+                        dbContext.Announcements.Add(announcement);
+
+                        // Send email warning
+                        var subject = "Action Required: Pending Salary Deduction";
+                        var body = $"<p>Dear {employee.FirstName} {employee.LastName},</p><p>You were marked absent on {date} and did not submit a leave request. A salary deduction is currently pending admin review.</p>";
+                        
+                        if (!string.IsNullOrEmpty(employee.Email))
+                        {
+                            try 
+                            {
+                                await emailService.SendEmailAsync(employee.Email, subject, body);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Failed to send absence warning to {Email}", employee.Email);
+                            }
                         }
                     }
                 }
@@ -143,6 +141,6 @@ public class EndOfDayAbsenceDetectorJob : BackgroundService
         }
 
         await dbContext.SaveChangesAsync(stoppingToken);
-        _logger.LogInformation("Absence detection completed for {Date}.", today);
+        _logger.LogInformation("Absence detection completed up to {Date}.", today);
     }
 }

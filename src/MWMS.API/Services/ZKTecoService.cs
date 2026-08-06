@@ -22,10 +22,10 @@ namespace MWMS.API.Services
 
     public class ZKUserItem
     {
-        public string? uid { get; set; }
+        public int uid { get; set; }
         public string? userId { get; set; }
         public string? name { get; set; }
-        public string? role { get; set; }
+        public int role { get; set; }
     }
 
     public class ZKTecoService : IZKTecoService
@@ -39,9 +39,9 @@ namespace MWMS.API.Services
 
         public async Task<int> FetchLogsAsync(string ipAddress, int port, int machineNumber, DateTime startDate, DateTime endDate)
         {
-            var scriptPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "fetch_zkteco.js");
-            var outputPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "zk_logs.json");
-            var usersOutputPath = System.IO.Path.Combine(System.IO.Directory.GetCurrentDirectory(), "zk_users.json");
+            var scriptPath = System.IO.Path.Combine(AppContext.BaseDirectory, "fetch_zkteco.js");
+            var outputPath = System.IO.Path.Combine(AppContext.BaseDirectory, "zk_logs.json");
+            var usersOutputPath = System.IO.Path.Combine(AppContext.BaseDirectory, "zk_users.json");
 
             if (!System.IO.File.Exists(scriptPath))
             {
@@ -61,8 +61,11 @@ namespace MWMS.API.Services
             using var process = new System.Diagnostics.Process { StartInfo = processStartInfo };
             process.Start();
             
-            // Wait up to 30 seconds for the node script to fetch 50k+ logs
-            bool completed = process.WaitForExit(30000);
+            var errorTask = process.StandardError.ReadToEndAsync();
+            var outputTask = process.StandardOutput.ReadToEndAsync();
+
+            // Wait up to 60 seconds for the node script to fetch 50k+ logs
+            bool completed = process.WaitForExit(60000);
             
             if (!completed)
             {
@@ -72,7 +75,7 @@ namespace MWMS.API.Services
 
             if (process.ExitCode != 0)
             {
-                var error = process.StandardError.ReadToEnd();
+                var error = await errorTask;
                 throw new Exception($"Failed to fetch logs: {error}");
             }
 
@@ -163,7 +166,14 @@ namespace MWMS.API.Services
             
             var existingLogs = await _context.RawAttendanceLogs
                 .Where(x => x.PunchTime >= startDate && x.PunchTime <= endDate)
+                .Select(x => new { x.EmployeeId, x.PunchTime })
                 .ToListAsync();
+
+            var existingLogKeys = new HashSet<string>(
+                existingLogs.Select(x => $"{x.EmployeeId}_{x.PunchTime.Ticks}")
+            );
+
+            var empLookup = new Dictionary<string, Employee?>();
 
             var newLogs = new List<RawAttendanceLog>();
 
@@ -179,38 +189,37 @@ namespace MWMS.API.Services
                         int devUserId = 0;
                         int.TryParse(log.deviceUserId, out devUserId);
 
-                        // Check if duplicate
-                        if (existingLogs.Any(x => x.Employee != null && 
-                            (x.Employee.DeviceUserId == devUserId || 
-                             x.Employee.EmployeeCode == employeeCodeStr ||
-                             x.Employee.EmployeeCode == $"EMP-SYNC-{employeeCodeStr}" ||
-                             x.Employee.EmployeeCode == $"EMP-{employeeCodeStr}") 
-                             && x.PunchTime == recordTime))
+                        if (!empLookup.TryGetValue(employeeCodeStr, out var emp))
                         {
-                            continue;
+                            emp = employees
+                                .Where(e => 
+                                    (devUserId != 0 && e.DeviceUserId == devUserId) || 
+                                    e.EmployeeCode == employeeCodeStr ||
+                                    e.EmployeeCode == $"EMP-SYNC-{employeeCodeStr}" ||
+                                    e.EmployeeCode == $"EMP-{employeeCodeStr}")
+                                .OrderByDescending(e => !e.IsDeleted)
+                                .ThenByDescending(e => e.IsActive)
+                                .ThenByDescending(e => e.Id)
+                                .FirstOrDefault();
+                            empLookup[employeeCodeStr] = emp;
                         }
 
-                        var emp = employees
-                            .Where(e => 
-                                (devUserId != 0 && e.DeviceUserId == devUserId) || 
-                                e.EmployeeCode == employeeCodeStr ||
-                                e.EmployeeCode == $"EMP-SYNC-{employeeCodeStr}" ||
-                                e.EmployeeCode == $"EMP-{employeeCodeStr}")
-                            .OrderByDescending(e => !e.IsDeleted)
-                            .ThenByDescending(e => e.IsActive)
-                            .ThenByDescending(e => e.Id)
-                            .FirstOrDefault();
                         if (emp != null)
                         {
-                            newLogs.Add(new RawAttendanceLog
+                            string logKey = $"{emp.Id}_{recordTime.Ticks}";
+                            if (!existingLogKeys.Contains(logKey))
                             {
-                                EmployeeId = emp.Id,
-                                PunchTime = recordTime,
-                                DeviceId = ipAddress,
-                                IsProcessed = false,
-                                CreatedAt = DateTime.UtcNow
-                            });
-                            importedCount++;
+                                existingLogKeys.Add(logKey);
+                                newLogs.Add(new RawAttendanceLog
+                                {
+                                    EmployeeId = emp.Id,
+                                    PunchTime = recordTime,
+                                    DeviceId = ipAddress,
+                                    IsProcessed = false,
+                                    CreatedAt = DateTime.UtcNow
+                                });
+                                importedCount++;
+                            }
                         }
                     }
                 }

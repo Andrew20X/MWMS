@@ -139,6 +139,15 @@ public class AttendanceEngineService : IAttendanceEngineService
         
         if (!unprocessedLogs.Any()) return;
 
+        var allEmployees = await _employeeRepository.GetAllAsync();
+        var empDict = allEmployees.ToDictionary(e => e.Id);
+
+        var minDate = unprocessedLogs.Min(l => DateOnly.FromDateTime(l.PunchTime));
+        var maxDate = unprocessedLogs.Max(l => DateOnly.FromDateTime(l.PunchTime));
+        
+        var existingAttendances = await _attendanceRepository.GetAttendancesByDateRangeAsync(minDate, maxDate);
+        var attDict = existingAttendances.ToDictionary(a => $"{a.EmployeeId}_{a.Date.DayNumber}");
+
         var groupedLogs = unprocessedLogs
             .GroupBy(l => new { l.EmployeeId, Date = DateOnly.FromDateTime(l.PunchTime) })
             .ToList();
@@ -154,17 +163,17 @@ public class AttendanceEngineService : IAttendanceEngineService
             var firstPunch = TimeOnly.FromDateTime(punches.First().PunchTime);
             var lastPunch = TimeOnly.FromDateTime(punches.Last().PunchTime);
 
-            var employee = await _employeeRepository.GetByIdAsync(employeeId);
-            if (employee == null)
+            if (!empDict.TryGetValue(employeeId, out var employee) || employee == null)
             {
                 continue;
             }
 
             var shift = employee.Shift;
 
-            var attendance = await _attendanceRepository.GetByEmployeeAndDateAsync(employeeId, date);
+            string attKey = $"{employeeId}_{date.DayNumber}";
             bool isNew = false;
-            if (attendance == null)
+            
+            if (!attDict.TryGetValue(attKey, out var attendance) || attendance == null)
             {
                 attendance = new Attendance
                 {

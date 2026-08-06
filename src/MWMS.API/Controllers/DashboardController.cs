@@ -50,4 +50,17 @@ public class DashboardController : ControllerBase
         var list = await _dashboardService.GetAbsentsTodayAsync();
         return Ok(list);
     }
+    [HttpGet("present")]
+    public async Task<IActionResult> GetPresent()
+    {
+        var list = await _dashboardService.GetPresentTodayAsync();
+        return Ok(list);
+    }
+
+    [HttpGet("workforce")]
+    public async Task<IActionResult> GetWorkforce()
+    {
+        var list = await _dashboardService.GetWorkforceAsync();
+        return Ok(list);
+    }
 }

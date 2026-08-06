@@ -32,6 +32,10 @@
     <Content Remove="TestApi/**" />
     <EmbeddedResource Remove="TestApi/**" />
     <None Remove="TestApi/**" />
+    
+    <Content Include="fetch_zkteco.js">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

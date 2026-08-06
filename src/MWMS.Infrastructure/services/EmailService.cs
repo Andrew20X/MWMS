@@ -22,11 +22,15 @@ public class EmailService : IEmailService
 
     public async Task SendEmailAsync(string to, string subject, string htmlBody, string? plainTextBody = null, List<EmailAttachment>? attachments = null)
     {
+        // TESTING OVERRIDE: Disable all emails
+        return;
         await SendEmailAsync(new List<string> { to }, null, null, subject, htmlBody, plainTextBody, attachments);
     }
 
         public async Task SendEmailAsync(List<string> to, List<string>? cc, List<string>? bcc, string subject, string body, string? plainTextBody = null, List<EmailAttachment>? attachments = null)
         {
+            // TESTING OVERRIDE: Disable all emails
+            return;
             try
             {
                 var message = new MimeMessage();

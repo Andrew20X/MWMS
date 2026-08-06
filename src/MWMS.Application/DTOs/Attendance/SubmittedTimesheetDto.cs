@@ -7,4 +7,6 @@ public class SubmittedTimesheetDto
     public string EmployeeName { get; set; } = string.Empty;
     public DateTime SubmittedAt { get; set; }
     public long FileSizeBytes { get; set; }
+    public int CommentCount { get; set; }
+    public string? LatestComment { get; set; }
 }

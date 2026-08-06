@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Typography, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, InputAdornment, Autocomplete } from '@mui/material';
+import { Typography, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Button, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Snackbar, InputAdornment, Autocomplete, Checkbox } from '@mui/material';
 import { Plus, Trash2, Edit2, Key, Search, Calendar, UserCog } from 'lucide-react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -149,6 +149,53 @@ export default function Employees() {
     } finally {
       setDeleteConfirmOpen(false);
       setEmployeeToDelete(null);
+    }
+  };
+
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
+
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const newSelecteds = filteredEmployees.map((n) => n.id);
+      setSelectedIds(newSelecteds);
+      return;
+    }
+    setSelectedIds([]);
+  };
+
+  const handleSelectClick = (id: number) => {
+    const selectedIndex = selectedIds.indexOf(id);
+    let newSelected: number[] = [];
+
+    if (selectedIndex === -1) {
+      newSelected = newSelected.concat(selectedIds, id);
+    } else if (selectedIndex === 0) {
+      newSelected = newSelected.concat(selectedIds.slice(1));
+    } else if (selectedIndex === selectedIds.length - 1) {
+      newSelected = newSelected.concat(selectedIds.slice(0, -1));
+    } else if (selectedIndex > 0) {
+      newSelected = newSelected.concat(
+        selectedIds.slice(0, selectedIndex),
+        selectedIds.slice(selectedIndex + 1),
+      );
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const isSelected = (id: number) => selectedIds.indexOf(id) !== -1;
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    try {
+      await axios.post(`http://localhost:5222/api/Employees/bulk-delete`, selectedIds);
+      showMessage('Selected employees deleted successfully', 'success');
+      fetchEmployees(false);
+      setSelectedIds([]);
+    } catch (err) {
+      showMessage('Failed to bulk delete employees.', 'error');
+    } finally {
+      setBulkDeleteConfirmOpen(false);
     }
   };
 
@@ -310,6 +357,9 @@ export default function Employees() {
           Employee Directory
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+          <Button variant="outlined" color="error" onClick={() => setBulkDeleteConfirmOpen(true)} disabled={selectedIds.length === 0}>
+            Delete Selected ({selectedIds.length})
+          </Button>
           <Button variant="outlined" onClick={handleGenerateLogins}>
             Generate Logins
           </Button>
@@ -389,6 +439,15 @@ export default function Employees() {
         <Table sx={{ minWidth: 650 }} aria-label="employee table">
           <TableHead sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
             <TableRow>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  color="primary"
+                  indeterminate={selectedIds.length > 0 && selectedIds.length < filteredEmployees.length}
+                  checked={filteredEmployees.length > 0 && selectedIds.length === filteredEmployees.length}
+                  onChange={handleSelectAllClick}
+                  aria-label="select all employees"
+                />
+              </TableCell>
               <TableCell sx={{ fontWeight: 'normal' }}>Code</TableCell>
               <TableCell sx={{ fontWeight: 'normal' }}>Name</TableCell>
               <TableCell sx={{ fontWeight: 'normal' }}>Email</TableCell>
@@ -400,22 +459,32 @@ export default function Employees() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 5 }}>
+                <TableCell colSpan={6} align="center" sx={{ py: 5 }}>
                   <CircularProgress />
                 </TableCell>
               </TableRow>
             ) : filteredEmployees.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 5 }}>
+                <TableCell colSpan={6} align="center" sx={{ py: 5 }}>
                   <Typography color="text.secondary">No employees found.</Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              filteredEmployees.map((row) => (
+              filteredEmployees.map((row) => {
+                const isItemSelected = isSelected(row.id);
+                return (
                 <TableRow
                   key={row.id}
+                  selected={isItemSelected}
                   sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      color="primary"
+                      checked={isItemSelected}
+                      onChange={() => handleSelectClick(row.id)}
+                    />
+                  </TableCell>
                   <TableCell component="th" scope="row">{row.employeeCode.startsWith('no ID') ? 'no ID' : row.employeeCode}</TableCell>
                   <TableCell>{row.firstName} {row.lastName}</TableCell>
                   <TableCell>{row.email}</TableCell>
@@ -451,7 +520,7 @@ export default function Employees() {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ))
+              )})
             )}
           </TableBody>
         </Table>
@@ -581,6 +650,18 @@ export default function Employees() {
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setBalanceDialogOpen(false)} color="inherit">Cancel</Button>
           <Button onClick={handleSaveBalance} variant="contained" color="primary">Save Balance</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Bulk Delete Confirm Dialog */}
+      <Dialog open={bulkDeleteConfirmOpen} onClose={() => setBulkDeleteConfirmOpen(false)}>
+        <DialogTitle sx={{ fontWeight: 'normal', color: 'error.main' }}>Bulk Delete Employees</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete {selectedIds.length} employees? This action cannot be undone and will erase all their records.</Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setBulkDeleteConfirmOpen(false)} color="inherit">Cancel</Button>
+          <Button onClick={handleBulkDelete} variant="contained" color="error">Delete All Selected</Button>
         </DialogActions>
       </Dialog>
 

@@ -118,6 +118,19 @@ public class AnnouncementsController : ControllerBase
         await _announcementRepository.SaveChangesAsync();
         return NoContent();
     }
+
+    [HttpDelete("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> DeleteAllAnnouncements()
+    {
+        var announcements = await _announcementRepository.GetActiveAnnouncementsAsync();
+        foreach (var ann in announcements)
+        {
+            _announcementRepository.Delete(ann);
+        }
+        await _announcementRepository.SaveChangesAsync();
+        return NoContent();
+    }
 }
 
 /// <summary>Request body for creating an announcement with optional specific recipient.</summary>

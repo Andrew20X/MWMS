@@ -78,6 +78,11 @@ export default function Dashboard() {
     }
   };
 
+  const [openPresentDialog, setOpenPresentDialog] = useState(false);
+  const [openWorkforceDialog, setOpenWorkforceDialog] = useState(false);
+  const [presentList, setPresentList] = useState<LiveAttendance[]>([]);
+  const [workforceList, setWorkforceList] = useState<LiveAttendance[]>([]);
+
   const fetchLateList = async () => {
     if (!user) return;
     try {
@@ -97,6 +102,28 @@ export default function Dashboard() {
       setOpenAbsentDialog(true);
     } catch (err: any) {
       console.error("Failed to load absent list", err);
+    }
+  };
+
+  const fetchPresentList = async () => {
+    if (!user) return;
+    try {
+      const res = await axios.get('http://localhost:5222/api/Dashboard/present', { headers: { Authorization: `Bearer ${user.token}` } });
+      setPresentList(res.data);
+      setOpenPresentDialog(true);
+    } catch (err: any) {
+      console.error("Failed to load present list", err);
+    }
+  };
+
+  const fetchWorkforceList = async () => {
+    if (!user) return;
+    try {
+      const res = await axios.get('http://localhost:5222/api/Dashboard/workforce', { headers: { Authorization: `Bearer ${user.token}` } });
+      setWorkforceList(res.data);
+      setOpenWorkforceDialog(true);
+    } catch (err: any) {
+      console.error("Failed to load workforce list", err);
     }
   };
 
@@ -172,6 +199,8 @@ export default function Dashboard() {
       icon: <Users size={24} color="#6366F1" />, 
       bgColor: 'rgba(99, 102, 241, 0.08)',
       borderColor: 'rgba(99, 102, 241, 0.2)',
+      actionText: 'View All',
+      action: fetchWorkforceList
     },
     { 
       title: 'Present Today', 
@@ -179,6 +208,8 @@ export default function Dashboard() {
       icon: <CheckCircle2 size={24} color="#10B981" />, 
       bgColor: 'rgba(16, 185, 129, 0.08)',
       borderColor: 'rgba(16, 185, 129, 0.2)',
+      actionText: 'View Present',
+      action: fetchPresentList
     },
     { 
       title: 'Late Arrivals', 
@@ -591,6 +622,71 @@ export default function Dashboard() {
               absentList.map((emp) => (
                 <Box key={emp.employeeId} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Avatar sx={{ bgcolor: 'rgba(244, 63, 94, 0.1)', color: '#F43F5E', width: 40, height: 40, fontSize: '1rem', fontWeight: 400 }}>
+                    {emp.employeeName.charAt(0)}
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 400, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {emp.employeeName}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {emp.positionName}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))
+            )}
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openPresentDialog} onClose={() => setOpenPresentDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'normal' }}>
+          Present Today ({presentList.length})
+          <IconButton onClick={() => setOpenPresentDialog(false)} size="small"><X size={20} /></IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            {presentList.length === 0 ? (
+              <Typography color="text.secondary" variant="body2" sx={{ textAlign: 'center', py: 2 }}>No one present today.</Typography>
+            ) : (
+              presentList.map((emp) => (
+                <Box key={emp.employeeId} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(16, 185, 129, 0.1)', color: '#10B981', width: 40, height: 40, fontSize: '1rem', fontWeight: 400 }}>
+                    {emp.employeeName.charAt(0)}
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 400, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {emp.employeeName}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#64748B', fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {emp.positionName}
+                    </Typography>
+                  </Box>
+                  {emp.checkInTime && (
+                    <Typography variant="caption" sx={{ color: '#0F172A', fontWeight: 400, bgcolor: 'rgba(16, 185, 129, 0.1)', px: 1.5, py: 0.5, borderRadius: '6px' }}>
+                      {formatTime12Hour(emp.checkInTime)}
+                    </Typography>
+                  )}
+                </Box>
+              ))
+            )}
+          </Box>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openWorkforceDialog} onClose={() => setOpenWorkforceDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 'normal' }}>
+          Total Workforce ({workforceList.length})
+          <IconButton onClick={() => setOpenWorkforceDialog(false)} size="small"><X size={20} /></IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            {workforceList.length === 0 ? (
+              <Typography color="text.secondary" variant="body2" sx={{ textAlign: 'center', py: 2 }}>No employees found.</Typography>
+            ) : (
+              workforceList.map((emp) => (
+                <Box key={emp.employeeId} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Avatar sx={{ bgcolor: 'rgba(99, 102, 241, 0.1)', color: '#6366F1', width: 40, height: 40, fontSize: '1rem', fontWeight: 400 }}>
                     {emp.employeeName.charAt(0)}
                   </Avatar>
                   <Box sx={{ flex: 1, minWidth: 0 }}>

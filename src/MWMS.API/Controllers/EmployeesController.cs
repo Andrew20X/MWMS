@@ -192,6 +192,57 @@ public class EmployeesController : ControllerBase
         }
     }
 
+    [HttpPost("bulk-delete")]
+    public async Task<IActionResult> BulkDelete([FromBody] List<int> ids)
+    {
+        if (ids == null || !ids.Any()) return BadRequest("No IDs provided");
+
+        var context = HttpContext.RequestServices.GetRequiredService<MWMS.Persistence.Context.AppDbContext>();
+        using var transaction = await context.Database.BeginTransactionAsync();
+        try
+        {
+            var employees = context.Employees.Where(e => ids.Contains(e.Id)).ToList();
+            
+            foreach(var employee in employees)
+            {
+                var id = employee.Id;
+                // 1. Delete associated user account(s)
+                var users = context.Users.Where(u => 
+                    u.Username == $"MANAGER-SYNC-{employee.EmployeeCode}" ||
+                    u.Username == $"EMP-SYNC-{employee.EmployeeCode}" ||
+                    (!string.IsNullOrEmpty(employee.Email) && u.Email == employee.Email) ||
+                    u.FullName == $"{employee.FirstName} {employee.LastName}");
+                context.Users.RemoveRange(users);
+
+                // 2. Delete all related records
+                context.SalaryDeductions.RemoveRange(context.SalaryDeductions.Where(x => x.EmployeeId == id));
+                context.ApprovalHistories.RemoveRange(context.ApprovalHistories.Where(x => x.ApproverId == id));
+                context.LeaveBalances.RemoveRange(context.LeaveBalances.Where(x => x.EmployeeId == id));
+                context.LeaveRequests.RemoveRange(context.LeaveRequests.Where(x => x.EmployeeId == id));
+                context.OvertimeRequests.RemoveRange(context.OvertimeRequests.Where(x => x.EmployeeId == id));
+                context.CorrectionRequests.RemoveRange(context.CorrectionRequests.Where(x => x.EmployeeId == id));
+                context.RawAttendanceLogs.RemoveRange(context.RawAttendanceLogs.Where(x => x.EmployeeId == id));
+                context.Attendances.RemoveRange(context.Attendances.Where(x => x.EmployeeId == id));
+
+                // Set subordinates manager to null
+                var subordinates = context.Employees.Where(e => e.ManagerId == id);
+                foreach(var sub in subordinates) { sub.ManagerId = null; }
+
+                // 3. Finally delete the employee
+                context.Employees.Remove(employee);
+            }
+
+            await context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            return BadRequest(new { error = "Failed to bulk delete employees.", details = ex.Message });
+        }
+    }
+
     [HttpPost("import-fb")]
     [Microsoft.AspNetCore.Authorization.AllowAnonymous]
     public async Task<IActionResult> ImportFbEmployees([FromServices] MWMS.Persistence.Context.AppDbContext context)
