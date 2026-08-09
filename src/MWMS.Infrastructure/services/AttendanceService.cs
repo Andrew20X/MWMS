@@ -528,7 +528,7 @@ public class AttendanceService : IAttendanceService
             
             // Overwrite columns 2 (Day Name) and 3 (Date) with actual values
             worksheet.Cell(row, 2).Value = date.ToString("dddd"); // e.g. Monday
-            worksheet.Cell(row, 3).Value = date.ToString("dd-MMM-yy"); // e.g. 30-Jun-26
+            worksheet.Cell(row, 3).Value = date.ToDateTime(TimeOnly.MinValue); // Insert as DateTime instead of string
 
             if (periodAttendances.TryGetValue(date, out var attendance))
             {

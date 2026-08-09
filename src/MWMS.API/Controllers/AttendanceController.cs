@@ -459,7 +459,7 @@ public class AttendanceController : ControllerBase
         public DateTime EndDate { get; set; }
     }
 
-    [Authorize(Roles = "Manager")]
+    [Authorize(Roles = "Admin")]
     [HttpPost("fetch-from-device")]
     public async Task<IActionResult> FetchFromDevice([FromBody] FetchDeviceRequest request, [FromServices] MWMS.API.Services.IZKTecoService zkTecoService)
     {

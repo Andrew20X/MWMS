@@ -356,14 +356,14 @@ export default function Employees() {
         <Typography variant="h4" sx={{ m: 0 }}>
           Employee Directory
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
-          <Button variant="outlined" color="error" onClick={() => setBulkDeleteConfirmOpen(true)} disabled={selectedIds.length === 0}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+          <Button variant="outlined" color="error" onClick={() => setBulkDeleteConfirmOpen(true)} disabled={selectedIds.length === 0} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Delete Selected ({selectedIds.length})
           </Button>
-          <Button variant="outlined" onClick={handleGenerateLogins}>
+          <Button variant="outlined" onClick={handleGenerateLogins} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Generate Logins
           </Button>
-          <Button variant="contained" startIcon={<Plus size={18} />} onClick={openAddDialog}>
+          <Button variant="contained" startIcon={<Plus size={18} />} onClick={openAddDialog} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Add Employee
           </Button>
         </Box>

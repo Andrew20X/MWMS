@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Typography, Box, Paper, Button, Alert, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, Checkbox } from '@mui/material';
+import { Typography, Box, Paper, Button, Alert, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Dialog, DialogTitle, DialogContent, DialogActions, Checkbox, TextField } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
-import { Download, Trash, MessageSquare } from 'lucide-react';
+import { Download, Trash, MessageSquare, Calendar } from 'lucide-react';
 import axios from 'axios';
 
 
@@ -23,6 +23,50 @@ export default function Timesheets() {
   const [newComment, setNewComment] = useState('');
   const [addingComment, setAddingComment] = useState(false);
 
+  const [deadline, setDeadline] = useState<string | null>(null);
+  const [openDeadlineDialog, setOpenDeadlineDialog] = useState(false);
+  const [newDeadline, setNewDeadline] = useState('');
+  const [updatingDeadline, setUpdatingDeadline] = useState(false);
+
+  const fetchDeadline = async () => {
+    try {
+      const res = await axios.get('http://localhost:5222/api/Attendance/settings', {
+        headers: { Authorization: `Bearer ${user?.token}` }
+      });
+      if (res.data.deadline) {
+        setDeadline(res.data.deadline);
+        const localDt = new Date(res.data.deadline);
+        localDt.setMinutes(localDt.getMinutes() - localDt.getTimezoneOffset());
+        setNewDeadline(localDt.toISOString().slice(0, 16));
+      } else {
+        setDeadline(null);
+        setNewDeadline('');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateDeadline = async () => {
+    setUpdatingDeadline(true);
+    try {
+      await axios.post('http://localhost:5222/api/Attendance/settings', 
+        { deadline: newDeadline || null },
+        { headers: { Authorization: `Bearer ${user?.token}` } }
+      );
+      setDeadline(newDeadline || null);
+      setOpenDeadlineDialog(false);
+      setMessage({ type: 'success', text: 'Deadline updated successfully.' });
+      setTimeout(() => setMessage(null), 4000);
+    } catch (err) {
+      console.error(err);
+      setMessage({ type: 'error', text: 'Failed to update deadline.' });
+      setTimeout(() => setMessage(null), 4000);
+    } finally {
+      setUpdatingDeadline(false);
+    }
+  };
+
   const fetchSubmitted = async () => {
     setLoadingSubmitted(true);
     try {
@@ -39,6 +83,7 @@ export default function Timesheets() {
 
   useEffect(() => {
     fetchSubmitted();
+    fetchDeadline();
   }, []);
 
 
@@ -174,16 +219,28 @@ export default function Timesheets() {
       {message && <Alert severity={message.type} sx={{ mb: 3 }} onClose={() => setMessage(null)}>{message.text}</Alert>}
 
       <Box>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4" sx={{ fontWeight: 'normal', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
-            Submitted Final Timesheets
-          </Typography>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'center' }, gap: 2, mb: 3 }}>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 'normal', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
+              Submitted Final Timesheets
+            </Typography>
+            {deadline && (
+              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                Current Deadline: {new Date(deadline).toLocaleString()}
+              </Typography>
+            )}
+          </Box>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', sm: 'auto' } }}>
-            <Button variant="outlined" startIcon={<Download size={18} />} onClick={handleDownloadAllSubmitted}>
+            {user?.role === 'Admin' && (
+              <Button variant="outlined" color="primary" startIcon={<Calendar size={18} />} onClick={() => setOpenDeadlineDialog(true)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                Set Deadline
+              </Button>
+            )}
+            <Button variant="outlined" startIcon={<Download size={18} />} onClick={handleDownloadAllSubmitted} sx={{ width: { xs: '100%', sm: 'auto' } }}>
               Download All
             </Button>
             {selectedFiles.length > 0 && (
-              <Button variant="contained" color="error" startIcon={<Trash size={18} />} onClick={() => confirmDeleteSubmitted(selectedFiles)}>
+              <Button variant="contained" color="error" startIcon={<Trash size={18} />} onClick={() => confirmDeleteSubmitted(selectedFiles)} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                 Delete Selected ({selectedFiles.length})
               </Button>
             )}
@@ -338,7 +395,28 @@ export default function Timesheets() {
         </DialogActions>
       </Dialog>
 
-
+      <Dialog open={openDeadlineDialog} onClose={() => setOpenDeadlineDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Set Submission Deadline</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+            Set a deadline for employees to submit their timesheets. Submissions after this date will be marked as late or blocked. Leave blank to remove the deadline.
+          </Typography>
+          <TextField
+            fullWidth
+            label="Deadline Date & Time"
+            type="datetime-local"
+            value={newDeadline}
+            onChange={(e) => setNewDeadline(e.target.value)}
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setOpenDeadlineDialog(false)}>Cancel</Button>
+          <Button onClick={handleUpdateDeadline} variant="contained" disabled={updatingDeadline}>
+            {updatingDeadline ? <CircularProgress size={24} color="inherit" /> : 'Save Deadline'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

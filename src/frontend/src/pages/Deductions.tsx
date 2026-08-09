@@ -214,7 +214,7 @@ export default function Deductions() {
                   <TableCell>{getStatusChip(row.status)}</TableCell>
                   {isAdminOrHR && (
                     <TableCell align="right">
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, flexWrap: { xs: 'nowrap', sm: 'wrap' } }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, flexWrap: 'nowrap' }}>
                         {row.status === 'PendingPayroll' && (
                           <>
                             <Button 

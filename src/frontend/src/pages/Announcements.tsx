@@ -126,11 +126,11 @@ export default function Announcements() {
         <Typography variant="h4" sx={{ fontWeight: 'normal', color: '#1E293B', fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
           Manage Announcements
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2, width: { xs: '100%', sm: 'auto' } }}>
-          <Button variant="outlined" color="error" onClick={() => setDeleteAllConfirmOpen(true)} disabled={announcements.length === 0} sx={{ borderRadius: 2, flex: { xs: 1, sm: 'none' } }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, width: { xs: '100%', sm: 'auto' } }}>
+          <Button variant="outlined" color="error" onClick={() => setDeleteAllConfirmOpen(true)} disabled={announcements.length === 0} sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}>
             Delete All
           </Button>
-          <Button variant="contained" color="primary" startIcon={<Plus />} onClick={() => setOpen(true)} sx={{ borderRadius: 2, flex: { xs: 1, sm: 'none' } }}>
+          <Button variant="contained" color="primary" startIcon={<Plus />} onClick={() => setOpen(true)} sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' } }}>
             Post Announcement
           </Button>
         </Box>
