@@ -289,6 +289,10 @@ export default function Employees() {
       let userRole = employee.role || 'Employee';
       let userEmail = emp.email || '';
 
+      if (!['Employee', 'Manager', 'HR', 'Admin'].includes(userRole)) {
+        userRole = 'Employee';
+      }
+
       try {
         const userRes = await axios.get(`http://localhost:5222/api/Users/by-employee/${employee.id}`);
         if (userRes.data) {

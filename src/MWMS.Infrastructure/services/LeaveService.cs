@@ -453,7 +453,7 @@ public class LeaveService : ILeaveService
     private static string GetStatusLabel(LeaveStatus status) => status switch
     {
         LeaveStatus.PendingManagerApproval => "Pending Manager Approval",
-        LeaveStatus.PendingHRApproval      => "Pending HR Approval",
+        LeaveStatus.PendingHRApproval      => "Pending Final Approval",
         LeaveStatus.Approved               => "Approved",
         LeaveStatus.Rejected               => "Rejected",
         _                                  => status.ToString()

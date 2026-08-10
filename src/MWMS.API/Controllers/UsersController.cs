@@ -112,10 +112,10 @@ public class UsersController : ControllerBase
                 !u.IsDeleted && (u.Username == $"EMP-SYNC-{employee.EmployeeCode}" || u.Username == $"MANAGER-SYNC-{employee.EmployeeCode}"));
 
 
-        if (user == null) return NotFound(new { error = "Corresponding user account not found for this employee." });
-
-        // Validate uniqueness
-        var conflictingUsernameUser = users.FirstOrDefault(u => u.Id != user.Id && u.Username == dto.Username && !u.IsDeleted);
+        if (dto.EmployeeCode == "no ID") dto.EmployeeCode = "";
+        
+        // Validate uniqueness first
+        var conflictingUsernameUser = users.FirstOrDefault(u => (user == null || u.Id != user.Id) && u.Username == dto.Username && !u.IsDeleted);
         if (conflictingUsernameUser != null)
         {
             if (conflictingUsernameUser.Username.StartsWith("EMP-SYNC") || conflictingUsernameUser.Username.StartsWith("MANAGER-SYNC"))
@@ -128,9 +128,9 @@ public class UsersController : ControllerBase
             }
         }
             
-        if (dto.Email != user.Email)
+        if (user == null || dto.Email != user.Email)
         {
-            var conflictingEmailUser = users.FirstOrDefault(u => u.Id != user.Id && u.Email == dto.Email && !u.IsDeleted);
+            var conflictingEmailUser = users.FirstOrDefault(u => (user == null || u.Id != user.Id) && u.Email == dto.Email && !u.IsDeleted);
             if (conflictingEmailUser != null && !string.IsNullOrEmpty(dto.Email) && dto.Email != "(No Email)")
             {
                 if (conflictingEmailUser.Username.StartsWith("EMP-SYNC") || conflictingEmailUser.Username.StartsWith("MANAGER-SYNC"))
@@ -142,6 +142,23 @@ public class UsersController : ControllerBase
                     return BadRequest(new { error = $"Email is already taken by another user account: '{conflictingEmailUser.Username}'. Please use a different email or delete the duplicate account." });
                 }
             }
+        }
+
+        bool isNewUser = false;
+        if (user == null)
+        {
+            isNewUser = true;
+            user = new User
+            {
+                Username = dto.Username,
+                PasswordHash = _passwordHasher.Hash(string.IsNullOrEmpty(dto.Password) ? "measuresoft" : dto.Password),
+                FullName = dto.FullName,
+                Email = dto.Email ?? "",
+                Role = dto.Role,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.Users.Add(user);
         }
 
         var employees = await _employeeRepository.GetAllAsync();
@@ -171,7 +188,7 @@ public class UsersController : ControllerBase
         // Apply changes
         user.Username = dto.Username;
         user.FullName = dto.FullName;
-        user.Email = dto.Email;
+        user.Email = dto.Email ?? "";
         user.Role = dto.Role;
         user.UpdatedAt = DateTime.UtcNow;
 

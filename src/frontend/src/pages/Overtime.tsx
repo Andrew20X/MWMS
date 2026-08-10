@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const OVERTIME_STATUS_LABELS: Record<string, string> = {
   PendingManagerApproval: 'Pending Manager Approval',
-  PendingHRApproval: 'Pending HR Approval',
+  PendingHRApproval: 'Pending Final Approval',
   Approved: 'Approved',
   Rejected: 'Rejected',
 };

@@ -27,8 +27,8 @@ public static class DbSeeder
             context.Shifts.AddRange(
                 new Shift
                 {
-                    Name = "Day Shift",
-                    StartTime = new TimeOnly(8, 0),
+                    Name = "Morning",
+                    StartTime = new TimeOnly(9, 0),
                     EndTime = new TimeOnly(17, 0),
                     GraceMinutes = 15,
                     LunchMinutes = 60

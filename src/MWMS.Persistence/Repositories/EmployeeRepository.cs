@@ -50,6 +50,7 @@ public class EmployeeRepository : GenericRepository<Employee>, IEmployeeReposito
             .Include(e => e.Shift)
             .Include(e => e.Manager)
             .Include(e => e.Subordinates)
+            .Where(e => !e.IsDeleted)
             .ToListAsync();
     }
 
@@ -60,7 +61,7 @@ public class EmployeeRepository : GenericRepository<Employee>, IEmployeeReposito
             .Include(e => e.Position)
             .Include(e => e.Shift)
             .Include(e => e.Manager)
-            .FirstOrDefaultAsync(e => e.Id == id);
+            .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
     }
 
     public async Task<IEnumerable<Employee>> GetByManagerIdAsync(int managerId)

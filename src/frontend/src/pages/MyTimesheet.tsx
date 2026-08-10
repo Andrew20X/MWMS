@@ -225,7 +225,7 @@ export default function MyTimesheet() {
       await axios.post('http://localhost:5222/api/Attendance/upload-final/me', formData, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${user?.token}` }
       });
-      showMessage('Final timesheet submitted to HR successfully!', "success");
+      showMessage('Final timesheet submitted successfully!', "success");
       setSubmissionFiles([]);
       setShowSubmissionForm(false);
       fetchData();
@@ -629,7 +629,7 @@ export default function MyTimesheet() {
         <DialogContent>
           <Box sx={{ mt: 1 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Select a date range to generate and download your timesheet in the HR New Format. Review the downloaded file before submitting.
+              Select a date range to generate and download your timesheet in the New Format. Review the downloaded file before submitting.
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
               <Box>

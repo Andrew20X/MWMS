@@ -7,7 +7,7 @@ async function fetchLogs() {
     const outputPath = process.argv[4] || 'zk_logs.json';
     const usersOutputPath = process.argv[5] || 'zk_users.json';
     
-    let zkInstance = new ZKLib(ip, port, 10000, 4000);
+    let zkInstance = new ZKLib(ip, port, 60000, 60000); // Increased timeout to 60s
     try {
         await zkInstance.createSocket();
         

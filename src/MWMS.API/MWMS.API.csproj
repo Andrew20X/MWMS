@@ -33,7 +33,7 @@
     <EmbeddedResource Remove="TestApi/**" />
     <None Remove="TestApi/**" />
     
-    <Content Include="fetch_zkteco.js">
+    <Content Include="fetch_zkteco.py">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

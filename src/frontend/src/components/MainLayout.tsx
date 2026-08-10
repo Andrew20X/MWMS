@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, AppBar, Toolbar, Button, IconButton } from '@mui/material';
-import { LayoutDashboard, FileSpreadsheet, Users, LogOut, Menu, Calendar, KeyRound, Bell, CheckSquare, Clock, BarChart, Home, LineChart, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, FileSpreadsheet, Users, LogOut, Menu, Calendar, KeyRound, Bell, CheckSquare, Clock, BarChart, Home, LineChart, AlertCircle, Database } from 'lucide-react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import ChangePasswordModal from './ChangePasswordModal';
@@ -68,6 +68,14 @@ export default function MainLayout() {
                   <ListItemText primary="Reports" />
                 </ListItemButton>
               </ListItem>
+              {isAdmin && (
+                <ListItem disablePadding>
+                  <ListItemButton component={Link} to="/system-logs" onClick={() => setMobileOpen(false)}>
+                    <ListItemIcon><Database color="#48657B" /></ListItemIcon>
+                    <ListItemText primary="System Logs" />
+                  </ListItemButton>
+                </ListItem>
+              )}
             </>
           )}
 

@@ -39,18 +39,18 @@ namespace MWMS.API.Services
 
         public async Task<int> FetchLogsAsync(string ipAddress, int port, int machineNumber, DateTime startDate, DateTime endDate)
         {
-            var scriptPath = System.IO.Path.Combine(AppContext.BaseDirectory, "fetch_zkteco.js");
+            var scriptPath = System.IO.Path.Combine(AppContext.BaseDirectory, "fetch_zkteco.py");
             var outputPath = System.IO.Path.Combine(AppContext.BaseDirectory, "zk_logs.json");
             var usersOutputPath = System.IO.Path.Combine(AppContext.BaseDirectory, "zk_users.json");
 
             if (!System.IO.File.Exists(scriptPath))
             {
-                throw new Exception($"Node script not found at {scriptPath}");
+                throw new Exception($"Python script not found at {scriptPath}");
             }
 
             var processStartInfo = new System.Diagnostics.ProcessStartInfo
             {
-                FileName = "node",
+                FileName = "python",
                 Arguments = $"\"{scriptPath}\" {ipAddress} {port} \"{outputPath}\" \"{usersOutputPath}\"",
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -161,6 +161,8 @@ namespace MWMS.API.Services
             }
 
             int importedCount = 0;
+            int matchedDateCount = 0;
+            int empFoundCount = 0;
             
             var employees = await _context.Employees.ToListAsync();
             
@@ -174,17 +176,19 @@ namespace MWMS.API.Services
             );
 
             var empLookup = new Dictionary<string, Employee?>();
-
             var newLogs = new List<RawAttendanceLog>();
+
+            Console.WriteLine($"[ZKTeco Debug] Total logs fetched: {logs.Count}, StartDate: {startDate}, EndDate: {endDate}");
 
             foreach (var log in logs)
             {
                 try
                 {
-                    DateTime recordTime = log.recordTime.ToLocalTime();
+                    DateTime recordTime = log.recordTime;
                     
                     if (recordTime >= startDate && recordTime <= endDate)
                     {
+                        matchedDateCount++;
                         string employeeCodeStr = log.deviceUserId ?? "";
                         int devUserId = 0;
                         int.TryParse(log.deviceUserId, out devUserId);
@@ -206,6 +210,7 @@ namespace MWMS.API.Services
 
                         if (emp != null)
                         {
+                            empFoundCount++;
                             string logKey = $"{emp.Id}_{recordTime.Ticks}";
                             if (!existingLogKeys.Contains(logKey))
                             {
@@ -228,6 +233,8 @@ namespace MWMS.API.Services
                     // Ignore parse errors
                 }
             }
+            
+            Console.WriteLine($"[ZKTeco Debug] Matched Date: {matchedDateCount}, Emp Found: {empFoundCount}, Imported: {importedCount}");
 
             if (newLogs.Any())
             {

@@ -20,6 +20,7 @@ import Deductions from './pages/Deductions';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import ForceChangePassword from './pages/ForceChangePassword';
+import SystemLogs from './pages/SystemLogs';
 
 
 function App() {
@@ -47,6 +48,7 @@ function App() {
                 <Route path="/my-insights" element={<MyInsights />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route path="/deductions" element={<Deductions />} />
+                <Route path="/system-logs" element={<SystemLogs />} />
               </Route>
             </Route>
 

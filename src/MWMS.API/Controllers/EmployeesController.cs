@@ -178,8 +178,10 @@ public class EmployeesController : ControllerBase
             var subordinates = context.Employees.Where(e => e.ManagerId == id);
             foreach(var sub in subordinates) { sub.ManagerId = null; }
 
-            // 3. Finally delete the employee
-            context.Employees.Remove(employee);
+            // 3. Finally soft-delete the employee
+            employee.IsDeleted = true;
+            employee.DeletedAt = DateTime.UtcNow;
+            context.Employees.Update(employee);
 
             await context.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -228,8 +230,10 @@ public class EmployeesController : ControllerBase
                 var subordinates = context.Employees.Where(e => e.ManagerId == id);
                 foreach(var sub in subordinates) { sub.ManagerId = null; }
 
-                // 3. Finally delete the employee
-                context.Employees.Remove(employee);
+                // 3. Finally soft-delete the employee
+                employee.IsDeleted = true;
+                employee.DeletedAt = DateTime.UtcNow;
+                context.Employees.Update(employee);
             }
 
             await context.SaveChangesAsync();

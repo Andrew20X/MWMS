@@ -79,7 +79,7 @@ const getStatusLabel = (statusLabel: string, status: string): string => {
   if (statusLabel) return statusLabel;
   switch (status) {
     case 'PendingManagerApproval': return 'Pending Manager Approval';
-    case 'PendingHRApproval':      return 'Pending HR Approval';
+    case 'PendingHRApproval':      return 'Pending Final Approval';
     case 'Approved':               return 'Approved';
     case 'Rejected':               return 'Rejected';
     default:                       return status;
@@ -467,9 +467,11 @@ export default function Leaves() {
                           <History size={18} />
                         </Button>
                       )}
-                      <Button color="error" size="small" title="Delete" onClick={() => handleDeleteLeave(row.id)} sx={{ minWidth: 'auto', p: 1 }}>
-                        <Trash2 size={18} />
-                      </Button>
+                      {(isAdmin || row.employeeId === user?.employeeId) && (
+                        <Button color="error" size="small" title="Delete" onClick={() => handleDeleteLeave(row.id)} sx={{ minWidth: 'auto', p: 1 }}>
+                          <Trash2 size={18} />
+                        </Button>
+                      )}
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -486,8 +488,8 @@ export default function Leaves() {
           <Typography sx={{ mb: 2 }}>
             {actionType === 'approve'
               ? isManager
-                ? 'Approving will advance this request to HR for final decision.'
-                : 'As HR, this is the final approval. Leave balance will be deducted for RDO/EDO requests.'
+                ? 'Approving will advance this request for final decision.'
+                : 'This is the final approval. Leave balance will be deducted for RDO/EDO requests.'
               : 'You can provide an optional reason that will be sent to the employee.'}
           </Typography>
           <TextField

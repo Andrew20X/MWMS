@@ -1,13 +1,17 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using MWMS.Domain.Entities;
 
 namespace MWMS.Persistence.Context;
 
 public class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options)
+    private readonly Microsoft.AspNetCore.Http.IHttpContextAccessor? _httpContextAccessor;
+
+    public AppDbContext(DbContextOptions<AppDbContext> options, Microsoft.AspNetCore.Http.IHttpContextAccessor? httpContextAccessor = null)
         : base(options)
     {
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public DbSet<Employee> Employees => Set<Employee>();
@@ -62,5 +66,138 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var auditEntries = OnBeforeSaveChanges();
+        var result = await base.SaveChangesAsync(cancellationToken);
+        if (auditEntries != null && auditEntries.Count > 0)
+        {
+            OnAfterSaveChanges(auditEntries);
+            await base.SaveChangesAsync(cancellationToken);
+        }
+        return result;
+    }
+
+    public override int SaveChanges()
+    {
+        var auditEntries = OnBeforeSaveChanges();
+        var result = base.SaveChanges();
+        if (auditEntries != null && auditEntries.Count > 0)
+        {
+            OnAfterSaveChanges(auditEntries);
+            base.SaveChanges();
+        }
+        return result;
+    }
+
+    private class AuditEntryHelper
+    {
+        public EntityEntry Entry { get; }
+        public AuditLog AuditLog { get; }
+        public AuditEntryHelper(EntityEntry entry, AuditLog auditLog)
+        {
+            Entry = entry;
+            AuditLog = auditLog;
+        }
+    }
+
+        private List<AuditEntryHelper> OnBeforeSaveChanges()
+    {
+        ChangeTracker.DetectChanges();
+        
+        var auditEntries = new List<AuditEntryHelper>();
+        var userIdStr = _httpContextAccessor?.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        int? userId = null;
+        if (int.TryParse(userIdStr, out int uid)) userId = uid;
+
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.Entity is AuditLog || entry.Entity is RawAttendanceLog || entry.State == EntityState.Detached || entry.State == EntityState.Unchanged)
+                continue;
+
+            var auditEntry = new AuditLog
+            {
+                EntityName = entry.Entity.GetType().Name,
+                ActionType = entry.State.ToString(),
+                AdminUserId = userId,
+                Timestamp = DateTime.UtcNow
+            };
+
+            var oldValues = new Dictionary<string, object?>();
+            var newValues = new Dictionary<string, object?>();
+
+            foreach (var property in entry.Properties)
+            {
+                if (property.IsTemporary)
+                    continue;
+
+                string propertyName = property.Metadata.Name;
+
+                switch (entry.State)
+                {
+                    case EntityState.Added:
+                        newValues[propertyName] = property.CurrentValue;
+                        break;
+                    case EntityState.Deleted:
+                        oldValues[propertyName] = property.OriginalValue;
+                        break;
+                    case EntityState.Modified:
+                        if (property.IsModified)
+                        {
+                            oldValues[propertyName] = property.OriginalValue;
+                            newValues[propertyName] = property.CurrentValue;
+                        }
+                        break;
+                }
+            }
+
+            auditEntry.OldValues = oldValues.Count > 0 ? System.Text.Json.JsonSerializer.Serialize(oldValues) : string.Empty;
+            auditEntry.NewValues = newValues.Count > 0 ? System.Text.Json.JsonSerializer.Serialize(newValues) : string.Empty;
+            
+            auditEntries.Add(new AuditEntryHelper(entry, auditEntry));
+        }
+
+        return auditEntries;
+    }
+
+    private void OnAfterSaveChanges(List<AuditEntryHelper> auditEntries)
+    {
+        foreach (var helper in auditEntries)
+        {
+            var pk = helper.Entry.Metadata.FindPrimaryKey()?.Properties.FirstOrDefault();
+            var pkName = pk?.Name;
+            
+            string entityId = "Unknown";
+            object? idValue = null;
+
+            if (pkName != null)
+            {
+                // Reading directly from the C# entity object bypasses any EntityEntry caching
+                var entityObj = helper.Entry.Entity;
+                idValue = entityObj.GetType().GetProperty(pkName)?.GetValue(entityObj);
+                entityId = idValue?.ToString() ?? "Unknown";
+            }
+
+            helper.AuditLog.EntityId = entityId;
+            
+            // If the entity was added, the new values didn't have the generated ID.
+            if (helper.AuditLog.ActionType == "Added" && helper.AuditLog.NewValues != string.Empty)
+            {
+                try
+                {
+                    var newVals = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object?>>(helper.AuditLog.NewValues) ?? new Dictionary<string, object?>();
+                    if (pkName != null)
+                    {
+                        newVals[pkName] = idValue;
+                        helper.AuditLog.NewValues = System.Text.Json.JsonSerializer.Serialize(newVals);
+                    }
+                }
+                catch { }
+            }
+
+            AuditLogs.Add(helper.AuditLog);
+        }
     }
 }

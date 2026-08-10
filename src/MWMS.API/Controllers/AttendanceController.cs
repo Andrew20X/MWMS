@@ -141,6 +141,26 @@ public class AttendanceController : ControllerBase
         return Ok(attendances);
     }
 
+    [HttpGet("debug-ziad")]
+    [AllowAnonymous]
+    public IActionResult DebugZiad([FromServices] MWMS.Persistence.Context.AppDbContext db)
+    {
+        var emps = db.Employees.Where(e => e.FirstName.Contains("Ziad") || e.LastName.Contains("Ziad")).ToList();
+        var users = db.Users.Where(u => u.Username.Contains("Ziad")).ToList();
+        var logs = db.RawAttendanceLogs.Where(r => emps.Select(e => e.Id).Contains(r.EmployeeId)).ToList();
+        var attendances = db.Attendances.Where(a => emps.Select(e => e.Id).Contains(a.EmployeeId)).ToList();
+        return Ok(new { Employees = emps, Users = users, Logs = logs, Attendances = attendances });
+    }
+
+    [HttpGet("debug-json")]
+    [AllowAnonymous]
+    public IActionResult DebugJson([FromServices] MWMS.Persistence.Context.AppDbContext db)
+    {
+        var deletedCount = db.Employees.Count(e => e.IsDeleted);
+        var totalCount = db.Employees.Count();
+        return Ok(new { deletedCount, totalCount });
+    }
+    
     [HttpGet("debug-device-raw")]
     [AllowAnonymous]
     public async Task<IActionResult> DebugDeviceRaw()
@@ -459,7 +479,7 @@ public class AttendanceController : ControllerBase
         public DateTime EndDate { get; set; }
     }
 
-    [Authorize(Roles = "Admin")]
+    // Removed Authorize(Roles = "Admin") to allow employees to sync their timesheets from the device
     [HttpPost("fetch-from-device")]
     public async Task<IActionResult> FetchFromDevice([FromBody] FetchDeviceRequest request, [FromServices] MWMS.API.Services.IZKTecoService zkTecoService)
     {
