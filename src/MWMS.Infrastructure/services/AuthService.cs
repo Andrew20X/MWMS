@@ -221,7 +221,7 @@ public class AuthService : IAuthService
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();
 
-        var resetLink = $"http://localhost:5173/reset-password?email={user.Email}&token={token}";
+        var resetLink = $"http://localhost:5173/#/reset-password?email={user.Email}&token={token}";
         var body = $"Please click the following link to reset your password:\n\n{resetLink}\n\nIf you did not request this, please ignore this email.";
         
         await _emailService.SendEmailAsync(user.Email, "Password Reset", body);
