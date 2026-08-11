@@ -16,15 +16,18 @@ public class AnnouncementsController : ControllerBase
     private readonly IAnnouncementRepository _announcementRepository;
     private readonly IEmailService _emailService;
     private readonly IEmployeeRepository _employeeRepository;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public AnnouncementsController(
         IAnnouncementRepository announcementRepository,
         IEmailService emailService,
-        IEmployeeRepository employeeRepository)
+        IEmployeeRepository employeeRepository,
+        IServiceScopeFactory scopeFactory)
     {
         _announcementRepository = announcementRepository;
         _emailService = emailService;
         _employeeRepository = employeeRepository;
+        _scopeFactory = scopeFactory;
     }
 
     [HttpGet]
@@ -82,7 +85,9 @@ public class AnnouncementsController : ControllerBase
             var emailBody = $"Hello {targetEmployee.FirstName},\n\nYou have received a notice:\n\n{announcement.Content}";
             _ = Task.Run(async () =>
             {
-                try { await _emailService.SendEmailAsync(targetEmployee.Email!, subject, emailBody); } catch { }
+                using var scope = _scopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                try { await emailService.SendEmailAsync(targetEmployee.Email!, subject, emailBody); } catch { }
             });
         }
         else
@@ -95,11 +100,13 @@ public class AnnouncementsController : ControllerBase
 
             _ = Task.Run(async () =>
             {
+                using var scope = _scopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
                 foreach (var employee in employeesToEmail)
                 {
                     var subject = $"New Announcement: {announcement.Title}";
                     var emailBody = $"Hello {employee.FirstName},\n\nA new announcement has been posted:\n\n{announcement.Content}";
-                    try { await _emailService.SendEmailAsync(employee.Email!, subject, emailBody); } catch { /* ignore */ }
+                    try { await emailService.SendEmailAsync(employee.Email!, subject, emailBody); } catch { /* ignore */ }
                 }
             });
         }

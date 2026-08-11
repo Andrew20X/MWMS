@@ -15,6 +15,7 @@ interface Deduction {
   reason: string;
   appliedOnDate: string;
   status: string;
+  warningMessage?: string;
 }
 
 export default function Deductions() {
@@ -203,13 +204,18 @@ export default function Deductions() {
                     </TableCell>
                   )}
                   <TableCell>{new Date(row.attendanceDate).toLocaleDateString()}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
                     <Typography variant="subtitle2" color="error.main">
                       {row.deductionAmount} Day(s)
                     </Typography>
                   </TableCell>
-                  <TableCell sx={{ minWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                    {row.reason}
+                  <TableCell sx={{ minWidth: { xs: 280, sm: 350 }, whiteSpace: 'normal' }}>
+                    {!row.warningMessage && row.reason}
+                    {row.warningMessage && (
+                      <Alert severity="warning" icon={<AlertCircle size={16} />} sx={{ mt: 1, p: 0, px: 1, '& .MuiAlert-icon': { mr: 1, py: '4px', alignItems: 'center' }, '& .MuiAlert-message': { p: '4px 0', fontSize: '0.85rem', width: '100%' } }}>
+                        {row.warningMessage}
+                      </Alert>
+                    )}
                   </TableCell>
                   <TableCell>{getStatusChip(row.status)}</TableCell>
                   {isAdminOrHR && (

@@ -51,6 +51,28 @@ public class TestEmailController : ControllerBase
         });
     }
 
+    [HttpGet("check-ziad")]
+    public async Task<IActionResult> CheckZiad([FromServices] MWMS.Persistence.Context.AppDbContext db)
+    {
+        var ziad = Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(db.Employees, e => e.FirstName.Contains("Ziad"));
+        if (ziad.Result != null)
+        {
+            return Ok(new { Email = ziad.Result.Email, IsActive = ziad.Result.IsActive, IsDeleted = ziad.Result.IsDeleted });
+        }
+        return NotFound("Not found");
+    }
+
+    [HttpGet("test-broadcast")]
+    public async Task<IActionResult> TestBroadcast([FromServices] MWMS.Application.Interfaces.IEmployeeRepository repo)
+    {
+        var employees = await repo.GetAllAsync();
+        var employeesToEmail = employees
+            .Where(e => e.IsActive && !e.IsDeleted && !string.IsNullOrEmpty(e.Email) && e.Email != "(No Email)")
+            .Select(e => new { e.FirstName, e.Email })
+            .ToList();
+        return Ok(employeesToEmail);
+    }
+
     [HttpGet("parse-excel")]
     public IActionResult ParseExcel([FromQuery] string file = "Timesheet_xls.xlsx")
     {

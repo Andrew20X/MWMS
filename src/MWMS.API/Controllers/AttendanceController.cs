@@ -102,6 +102,25 @@ public class AttendanceController : ControllerBase
         return Ok(pendingAbsences);
     }
 
+    [HttpDelete("pending-resolution/{id}")]
+    public async Task<IActionResult> DeletePendingResolution(int id, [FromServices] MWMS.Persistence.Context.AppDbContext db)
+    {
+        var attendance = await db.Attendances.FindAsync(id);
+        if (attendance == null) return NotFound();
+        
+        var deduction = System.Linq.Enumerable.FirstOrDefault(db.SalaryDeductions, d => d.RelatedAttendanceId == id);
+        if (deduction != null)
+        {
+            db.SalaryDeductions.Remove(deduction);
+        }
+        
+        attendance.AbsenceResolutionStatus = MWMS.Domain.Enums.AbsenceResolutionStatus.Waived;
+        db.Attendances.Update(attendance);
+        await db.SaveChangesAsync();
+        
+        return Ok(new { message = "Warning deleted" });
+    }
+
     [HttpDelete("me")]
     public async Task<IActionResult> DeleteMyAttendance([FromServices] MWMS.Persistence.Context.AppDbContext db)
     {

@@ -2,6 +2,7 @@ using MWMS.Application.DTOs;
 using MWMS.Application.Interfaces;
 using MWMS.Domain.Entities;
 using MWMS.Domain.Enums;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace MWMS.Infrastructure.Services;
 
@@ -14,6 +15,7 @@ public class LeaveService : ILeaveService
     private readonly ILeaveBalanceRepository _leaveBalanceRepository;
     private readonly IGenericRepository<ApprovalHistory> _approvalHistoryRepository;
     private readonly IGenericRepository<Attendance> _attendanceRepository;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public LeaveService(
         IGenericRepository<LeaveRequest> leaveRepository,
@@ -22,7 +24,8 @@ public class LeaveService : ILeaveService
         IEmailService emailService,
         ILeaveBalanceRepository leaveBalanceRepository,
         IGenericRepository<ApprovalHistory> approvalHistoryRepository,
-        IGenericRepository<Attendance> attendanceRepository)
+        IGenericRepository<Attendance> attendanceRepository,
+        IServiceScopeFactory scopeFactory)
     {
         _leaveRepository = leaveRepository;
         _employeeRepository = employeeRepository;
@@ -31,6 +34,7 @@ public class LeaveService : ILeaveService
         _leaveBalanceRepository = leaveBalanceRepository;
         _approvalHistoryRepository = approvalHistoryRepository;
         _attendanceRepository = attendanceRepository;
+        _scopeFactory = scopeFactory;
     }
 
     public async Task<LeaveRequestDto> SubmitRequestAsync(CreateLeaveRequestDto dto)
@@ -214,9 +218,10 @@ public class LeaveService : ILeaveService
             return false;
         }
 
-        // The admin message is already stored in request.AdminMessage and approval history is recorded below.
-        // We no longer append this to request.Reason to preserve the employee's original reason.
-
+        if (!string.IsNullOrWhiteSpace(adminMessage))
+        {
+            request.Reason += $"\n[{callerRole} Note: {adminMessage}]";
+        }
         request.UpdatedAt = DateTime.UtcNow;
         _leaveRepository.Update(request);
 
@@ -252,7 +257,9 @@ public class LeaveService : ILeaveService
 
             _ = Task.Run(async () =>
             {
-                try { await _emailService.SendEmailAsync(employee.Email!, subject, emailBody); } catch { }
+                using var scope = _scopeFactory.CreateScope();
+                var emailService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<IEmailService>(scope.ServiceProvider);
+                try { await emailService.SendEmailAsync(employee.Email!, subject, emailBody); } catch { }
             });
         }
 
@@ -274,9 +281,10 @@ public class LeaveService : ILeaveService
         request.Status = LeaveStatus.Rejected;
         request.AdminMessage = adminMessage;
         
-        // The admin message is already stored in request.AdminMessage and rejection history is recorded below.
-        // We no longer append this to request.Reason to preserve the employee's original reason.
-
+        if (!string.IsNullOrWhiteSpace(adminMessage))
+        {
+            request.Reason += $"\n[{callerRole} Note: {adminMessage}]";
+        }
         request.UpdatedAt = DateTime.UtcNow;
         _leaveRepository.Update(request);
 
@@ -307,7 +315,9 @@ public class LeaveService : ILeaveService
 
             _ = Task.Run(async () =>
             {
-                try { await _emailService.SendEmailAsync(employee.Email!, "Leave Request Rejected", emailBody); } catch { }
+                using var scope = _scopeFactory.CreateScope();
+                var emailService = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService<IEmailService>(scope.ServiceProvider);
+                try { await emailService.SendEmailAsync(employee.Email!, "Leave Request Rejected", emailBody); } catch { }
             });
         }
 

@@ -17,17 +17,20 @@ public class OvertimeController : ControllerBase
     private readonly IEmployeeRepository _employeeRepository;
     private readonly IEmailService _emailService;
     private readonly IGenericRepository<ApprovalHistory> _approvalHistoryRepository;
+    private readonly IServiceScopeFactory _scopeFactory;
 
     public OvertimeController(
         IOvertimeRepository overtimeRepository,
         IEmployeeRepository employeeRepository,
+        IGenericRepository<ApprovalHistory> approvalHistoryRepository,
         IEmailService emailService,
-        IGenericRepository<ApprovalHistory> approvalHistoryRepository)
+        IServiceScopeFactory scopeFactory)
     {
         _overtimeRepository = overtimeRepository;
         _employeeRepository = employeeRepository;
-        _emailService = emailService;
         _approvalHistoryRepository = approvalHistoryRepository;
+        _emailService = emailService;
+        _scopeFactory = scopeFactory;
     }
 
     [HttpGet("me")]
@@ -154,9 +157,10 @@ public class OvertimeController : ControllerBase
 
         request.AdminNote = adminNote;
         
-        // The admin message is already stored in request.AdminNote and approval history is recorded below.
-        // We no longer append this to request.Reason to preserve the employee's original reason.
-
+        if (!string.IsNullOrWhiteSpace(adminNote))
+        {
+            request.Reason += $"\n[{callerRole} Note: {adminNote}]";
+        }
         request.UpdatedAt = DateTime.UtcNow;
         _overtimeRepository.Update(request);
 
@@ -187,7 +191,9 @@ public class OvertimeController : ControllerBase
 
             _ = Task.Run(async () =>
             {
-                try { await _emailService.SendEmailAsync(employee.Email!, subject, body); } catch { }
+                using var scope = _scopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                try { await emailService.SendEmailAsync(employee.Email!, subject, body); } catch { }
             });
         }
 
@@ -221,9 +227,10 @@ public class OvertimeController : ControllerBase
         request.Status = OvertimeRequest.StatusRejected;
         request.AdminNote = adminNote;
         
-        // The admin message is already stored in request.AdminNote and rejection history is recorded below.
-        // We no longer append this to request.Reason to preserve the employee's original reason.
-
+        if (!string.IsNullOrWhiteSpace(adminNote))
+        {
+            request.Reason += $"\n[{callerRole} Note: {adminNote}]";
+        }
         request.UpdatedAt = DateTime.UtcNow;
         _overtimeRepository.Update(request);
 
@@ -250,7 +257,9 @@ public class OvertimeController : ControllerBase
             var body = $"Hello {employee.FirstName},\n\nYour Overtime request for {request.Date:yyyy-MM-dd} from {request.StartTime} to {request.EndTime} has been rejected by {callerRole}.\nNote: {adminNote ?? "None"}";
             _ = Task.Run(async () =>
             {
-                try { await _emailService.SendEmailAsync(employee.Email!, subject, body); } catch { }
+                using var scope = _scopeFactory.CreateScope();
+                var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                try { await emailService.SendEmailAsync(employee.Email!, subject, body); } catch { }
             });
         }
 

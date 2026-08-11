@@ -139,6 +139,7 @@ public class AttendanceEngineController : ControllerBase
         var now = DateTime.Now;
         var expiredAbsences = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
             System.Linq.Queryable.Where(dbContext.Attendances.Include(a => a.Employee), a => 
+                a.Employee.DeviceUserId > 0 &&
                 a.Status == MWMS.Domain.Enums.AttendanceStatus.Absent &&
                 a.AbsenceResolutionStatus == MWMS.Domain.Enums.AbsenceResolutionStatus.PendingResolution &&
                 a.DeadlineForLeaveRequest < now &&

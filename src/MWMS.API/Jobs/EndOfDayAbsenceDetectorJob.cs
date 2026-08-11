@@ -52,8 +52,8 @@ public class EndOfDayAbsenceDetectorJob : BackgroundService
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
-        // Find all active employees
-        var employees = await dbContext.Employees.Where(e => e.IsActive).ToListAsync(stoppingToken);
+        // Find all active employees who are not deleted and have a valid fingerprint ID
+        var employees = await dbContext.Employees.Where(e => e.IsActive && !e.IsDeleted && e.DeviceUserId > 0).ToListAsync(stoppingToken);
 
         foreach (var employee in employees)
         {
@@ -109,32 +109,6 @@ public class EndOfDayAbsenceDetectorJob : BackgroundService
                             Status = PayrollStatus.PendingPayroll
                         };
                         dbContext.SalaryDeductions.Add(deduction);
-
-                        // Create Warning Announcement
-                        var announcement = new Announcement
-                        {
-                            Title = "Warning: Unexcused Absence",
-                            Content = $"You were absent on {date} without a leave request. A salary deduction is pending admin review.",
-                            Type = "Notice",
-                            TargetEmployeeId = employee.Id
-                        };
-                        dbContext.Announcements.Add(announcement);
-
-                        // Send email warning
-                        var subject = "Action Required: Pending Salary Deduction";
-                        var body = $"<p>Dear {employee.FirstName} {employee.LastName},</p><p>You were marked absent on {date} and did not submit a leave request. A salary deduction is currently pending admin review.</p>";
-                        
-                        if (!string.IsNullOrEmpty(employee.Email))
-                        {
-                            try 
-                            {
-                                await emailService.SendEmailAsync(employee.Email, subject, body);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger.LogError(ex, "Failed to send absence warning to {Email}", employee.Email);
-                            }
-                        }
                     }
                 }
             }

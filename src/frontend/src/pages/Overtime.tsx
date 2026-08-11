@@ -202,7 +202,7 @@ export default function Overtime() {
                     <Box sx={{ display: 'flex', gap: 1 }}>
                       {(isManager ? req.status === 'PendingManagerApproval' : req.status === 'PendingHRApproval') && (
                         <Button variant="outlined" color="success" size="small" onClick={() => setConfirmDialog({ open: true, id: req.id, action: 'approve', note: '' })}>
-                          {isManager ? 'Approve (→HR)' : 'Final Approve'}
+                          {isManager ? 'Approve' : 'Final Approve'}
                         </Button>
                       )}
                       <Button variant="outlined" color="error" size="small" onClick={() => setConfirmDialog({ open: true, id: req.id, action: 'reject', note: '' })}>Reject</Button>

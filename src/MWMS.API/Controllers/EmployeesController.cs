@@ -180,6 +180,7 @@ public class EmployeesController : ControllerBase
 
             // 3. Finally soft-delete the employee
             employee.IsDeleted = true;
+            employee.IsActive = false;
             employee.DeletedAt = DateTime.UtcNow;
             context.Employees.Update(employee);
 
@@ -232,6 +233,7 @@ public class EmployeesController : ControllerBase
 
                 // 3. Finally soft-delete the employee
                 employee.IsDeleted = true;
+                employee.IsActive = false;
                 employee.DeletedAt = DateTime.UtcNow;
                 context.Employees.Update(employee);
             }

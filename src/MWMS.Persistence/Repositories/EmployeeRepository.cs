@@ -96,4 +96,12 @@ public class EmployeeRepository : GenericRepository<Employee>, IEmployeeReposito
 
         return null;
     }
+
+    public async Task<IEnumerable<Employee>> GetActiveEmployeesBasicAsync()
+    {
+        return await _context.Employees
+            .Include(e => e.Position)
+            .Where(e => e.IsActive && !e.IsDeleted)
+            .ToListAsync();
+    }
 }

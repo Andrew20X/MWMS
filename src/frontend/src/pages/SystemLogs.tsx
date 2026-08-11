@@ -16,7 +16,8 @@ import {
   FormControlLabel,
   Select,
   MenuItem,
-  InputAdornment
+  InputAdornment,
+  TablePagination
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import axios from 'axios';
@@ -57,6 +58,18 @@ const SystemLogs: React.FC = () => {
     showAll: false
   });
 
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(50);
+
+  const handleChangePage = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
   useEffect(() => {
     if (user?.token) {
       fetchLogs();
@@ -65,7 +78,7 @@ const SystemLogs: React.FC = () => {
 
   const fetchLogs = async () => {
     try {
-      const response = await axios.get(`http://localhost:5222/api/AuditLogs?limit=100000`, {
+      const response = await axios.get(`http://localhost:5222/api/AuditLogs?limit=2000`, {
         headers: {
           Authorization: `Bearer ${user?.token}`,
         },
@@ -287,7 +300,7 @@ const SystemLogs: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredLogs.map((log) => {
+                filteredLogs.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((log) => {
                   const d = new Date(log.timestamp);
                   const dateStr = isNaN(d.getTime()) ? '-' : format(d, 'MMM. dd, yyyy');
                   const timeStr = isNaN(d.getTime()) ? '-' : format(d, 'h:mm:ss a');
@@ -311,6 +324,15 @@ const SystemLogs: React.FC = () => {
               )}
             </TableBody>
           </Table>
+          <TablePagination
+            rowsPerPageOptions={[25, 50, 100]}
+            component="div"
+            count={filteredLogs.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+          />
         </TableContainer>
       </Box>
     </Box>

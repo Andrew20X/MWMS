@@ -28,6 +28,7 @@ public class DeductionsController : ControllerBase
         var deductions = await _dbContext.SalaryDeductions
             .Include(d => d.Employee)
             .Include(d => d.RelatedAttendance)
+            .Where(d => !d.Employee.IsDeleted)
             .OrderByDescending(d => d.AppliedOnDate)
             .Select(d => new
             {
@@ -39,7 +40,10 @@ public class DeductionsController : ControllerBase
                 d.DeductionAmount,
                 d.Reason,
                 d.AppliedOnDate,
-                Status = d.Status.ToString()
+                Status = d.Status.ToString(),
+                WarningMessage = (d.Status == PayrollStatus.PendingPayroll && d.Reason.StartsWith("AWOL"))
+                    ? $"You were absent on {d.RelatedAttendance.Date} without a leave request. A salary deduction is pending admin review." 
+                    : null
             })
             .ToListAsync();
 
@@ -49,8 +53,8 @@ public class DeductionsController : ControllerBase
     [HttpGet("my-deductions")]
     public async Task<IActionResult> GetMyDeductions()
     {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var employeeId))
+        var employeeIdString = User.FindFirst("EmployeeId")?.Value;
+        if (string.IsNullOrEmpty(employeeIdString) || !int.TryParse(employeeIdString, out var employeeId))
         {
             return Unauthorized();
         }
@@ -67,7 +71,10 @@ public class DeductionsController : ControllerBase
                 d.DeductionAmount,
                 d.Reason,
                 d.AppliedOnDate,
-                Status = d.Status.ToString()
+                Status = d.Status.ToString(),
+                WarningMessage = (d.Status == PayrollStatus.PendingPayroll && d.Reason.StartsWith("AWOL"))
+                    ? $"You were absent on {d.RelatedAttendance.Date} without a leave request. A salary deduction is pending admin review." 
+                    : null
             })
             .ToListAsync();
 

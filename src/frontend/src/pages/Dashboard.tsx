@@ -82,6 +82,7 @@ export default function Dashboard() {
   const [openWorkforceDialog, setOpenWorkforceDialog] = useState(false);
   const [presentList, setPresentList] = useState<LiveAttendance[]>([]);
   const [workforceList, setWorkforceList] = useState<LiveAttendance[]>([]);
+  const [deleteConfirm, setDeleteConfirm] = useState<{open: boolean, absenceId: number | null}>({open: false, absenceId: null});
 
   const fetchLateList = async () => {
     if (!user) return;
@@ -257,27 +258,57 @@ export default function Dashboard() {
                 borderRadius: 2, 
                 mb: 2,
                 display: 'flex',
-                alignItems: 'center',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
                 bgcolor: '#EF4444', // Tailwind red-500
                 color: 'white',
-                boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.4)'
+                boxShadow: '0 4px 6px -1px rgba(239, 68, 68, 0.4)',
+                '& .MuiAlert-message': { width: '100%', pt: { xs: 1, sm: 0 } },
+                '& .MuiAlert-action': { 
+                  margin: { xs: '8px 0 0 0', sm: '0 0 0 auto' },
+                  padding: 0,
+                  width: { xs: '100%', sm: 'auto' }
+                }
               }}
               action={
-                <Button 
-                  color="inherit" 
-                  size="small" 
-                  sx={{ 
-                    border: '1px solid rgba(255,255,255,0.5)', 
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    px: 2,
-                    fontWeight: 600,
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.15)', borderColor: 'white' }
-                  }}
-                  onClick={() => navigate(`/leaves?linkedAttendanceId=${absence.id}&date=${encodeURIComponent(absence.date)}`)}
-                >
-                  Submit Leave
-                </Button>
+                <Box sx={{ display: 'flex', gap: 1, width: '100%', justifyContent: { xs: 'flex-end', sm: 'flex-end' } }}>
+                  <Button 
+                    color="inherit" 
+                    size="small" 
+                    sx={{ 
+                      border: '1px solid rgba(255,255,255,0.5)', 
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      px: 2,
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      minWidth: 'fit-content',
+                      '&:hover': { bgcolor: 'rgba(255,255,255,0.15)', borderColor: 'white' }
+                    }}
+                    onClick={() => navigate(`/leaves?linkedAttendanceId=${absence.id}&date=${encodeURIComponent(absence.date)}`)}
+                  >
+                    Submit Leave
+                  </Button>
+                  <Button 
+                    color="inherit" 
+                    size="small" 
+                    sx={{ 
+                      border: '1px solid rgba(255,255,255,0.5)', 
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      px: 2,
+                      fontWeight: 600,
+                      whiteSpace: 'nowrap',
+                      minWidth: 'fit-content',
+                      '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.8)', borderColor: 'white' }
+                    }}
+                    onClick={() => {
+                      setDeleteConfirm({ open: true, absenceId: absence.id });
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </Box>
               }
             >
               <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
@@ -702,6 +733,41 @@ export default function Dashboard() {
             )}
           </Box>
         </DialogContent>
+      </Dialog>
+      <Dialog open={deleteConfirm.open} onClose={() => setDeleteConfirm({ open: false, absenceId: null })}>
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>Delete Warning</Typography>
+          <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3 }}>
+            Are you sure you want to permanently delete this unexcused absence warning?
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Button 
+              onClick={() => setDeleteConfirm({ open: false, absenceId: null })}
+              sx={{ color: 'text.secondary' }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="contained" 
+              color="error"
+              onClick={async () => {
+                if (deleteConfirm.absenceId) {
+                  try {
+                    await axios.delete(`http://localhost:5222/api/Attendance/pending-resolution/${deleteConfirm.absenceId}`, {
+                      headers: { Authorization: `Bearer ${user?.token}` }
+                    });
+                    setPendingAbsences(prev => prev.filter(a => a.id !== deleteConfirm.absenceId));
+                    setDeleteConfirm({ open: false, absenceId: null });
+                  } catch (err) {
+                    console.error('Failed to delete warning', err);
+                  }
+                }
+              }}
+            >
+              Delete
+            </Button>
+          </Box>
+        </Box>
       </Dialog>
       
       <style>

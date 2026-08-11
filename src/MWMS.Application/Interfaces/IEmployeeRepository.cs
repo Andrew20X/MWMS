@@ -13,4 +13,6 @@ public interface IEmployeeRepository : IGenericRepository<Employee>
     Task<string?> ValidateReferencesAsync(int departmentId, int positionId, int shiftId);
 
     Task<IEnumerable<Employee>> GetByManagerIdAsync(int managerId);
+
+    Task<IEnumerable<Employee>> GetActiveEmployeesBasicAsync();
 }

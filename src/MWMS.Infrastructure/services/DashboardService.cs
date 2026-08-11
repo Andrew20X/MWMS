@@ -19,8 +19,8 @@ public class DashboardService : IDashboardService
         var today = DateOnly.FromDateTime(DateTime.Today);
 
         // Calculate Total Employees
-        var allEmployees = await _employeeRepository.GetAllAsync();
-        var totalEmployees = allEmployees.Count(e => e.IsActive);
+        var allEmployees = await _employeeRepository.GetActiveEmployeesBasicAsync();
+        var totalEmployees = allEmployees.Count();
 
         // Get today's attendance logs
         var todayAttendances = await _attendanceRepository.GetTodayAttendanceAsync(today);
@@ -50,8 +50,8 @@ public class DashboardService : IDashboardService
         var startDate = endDate.AddDays(-days + 1);
 
         var attendances = await _attendanceRepository.GetAttendancesByDateRangeAsync(startDate, endDate);
-        var allEmployees = await _employeeRepository.GetAllAsync();
-        var activeEmployeeCount = allEmployees.Count(e => e.IsActive && !e.IsDeleted);
+        var allEmployees = await _employeeRepository.GetActiveEmployeesBasicAsync();
+        var activeEmployeeCount = allEmployees.Count();
 
         for (int i = 0; i < days; i++)
         {
@@ -121,12 +121,12 @@ public class DashboardService : IDashboardService
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
         var todayAttendances = await _attendanceRepository.GetTodayAttendanceAsync(today);
-        var allEmployees = await _employeeRepository.GetAllAsync();
+        var allEmployees = await _employeeRepository.GetActiveEmployeesBasicAsync();
         
         var presentEmployeeIds = todayAttendances.Select(a => a.EmployeeId).ToHashSet();
         
         var absents = allEmployees
-            .Where(e => e.IsActive && !e.IsDeleted && !presentEmployeeIds.Contains(e.Id))
+            .Where(e => !presentEmployeeIds.Contains(e.Id))
             .Select(e => new LiveAttendanceDto
             {
                 EmployeeId = e.Id,
@@ -161,10 +161,9 @@ public class DashboardService : IDashboardService
 
     public async Task<IEnumerable<LiveAttendanceDto>> GetWorkforceAsync()
     {
-        var allEmployees = await _employeeRepository.GetAllAsync();
+        var allEmployees = await _employeeRepository.GetActiveEmployeesBasicAsync();
         
         var workforce = allEmployees
-            .Where(e => e.IsActive && !e.IsDeleted)
             .Select(e => new LiveAttendanceDto
             {
                 EmployeeId = e.Id,

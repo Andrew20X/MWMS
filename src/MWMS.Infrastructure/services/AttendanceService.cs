@@ -505,6 +505,9 @@ public class AttendanceService : IAttendanceService
             .GroupBy(d => d.RelatedAttendance.Date)
             .ToDictionary(g => g.Key, g => g.ToList());
 
+        var allLeaves = await _leaveRequestRepository.GetAllAsync();
+        var employeeLeaves = allLeaves.Where(l => l.EmployeeId == employeeId && l.Status == MWMS.Domain.Enums.LeaveStatus.Approved && l.StartDate <= endDate && l.EndDate >= startDate).ToList();
+
         int startRow = 13;
         
         // 1. Clear all 31 days (rows 13 to 43) contents so no old template data is left
@@ -555,10 +558,20 @@ public class AttendanceService : IAttendanceService
 
                 if (periodOvertimes.TryGetValue(date, out var overtimes))
                 {
-                    var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}"));
+                    var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}{(string.IsNullOrWhiteSpace(o.Reason) ? "" : $" - {o.Reason}")}"));
                     desc = desc + " | " + otDesc;
                 }
                 
+                var dateLeaves = employeeLeaves.Where(l => l.StartDate <= date && l.EndDate >= date).ToList();
+                if (dateLeaves.Any())
+                {
+                    var leaveDesc = string.Join(", ", dateLeaves.Select(l => $"{l.Type} Leave{(string.IsNullOrWhiteSpace(l.Reason) ? "" : $" - {l.Reason}")}"));
+                    if (desc == "OnLeave" || desc == "Absent" || desc == "Weekend")
+                        desc = leaveDesc;
+                    else
+                        desc = desc + " | " + leaveDesc;
+                }
+
                 var deducDescList = new List<string>();
                 if (periodDeductions.TryGetValue(date, out var deducs))
                 {
@@ -598,8 +611,18 @@ public class AttendanceService : IAttendanceService
                 string desc = isWeekend ? "Weekend" : "Absent";
                 if (periodOvertimes.TryGetValue(date, out var overtimes))
                 {
-                    var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}"));
+                    var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}{(string.IsNullOrWhiteSpace(o.Reason) ? "" : $" - {o.Reason}")}"));
                     desc = desc + " | " + otDesc;
+                }
+
+                var dateLeaves = employeeLeaves.Where(l => l.StartDate <= date && l.EndDate >= date).ToList();
+                if (dateLeaves.Any())
+                {
+                    var leaveDesc = string.Join(", ", dateLeaves.Select(l => $"{l.Type} Leave{(string.IsNullOrWhiteSpace(l.Reason) ? "" : $" - {l.Reason}")}"));
+                    if (desc == "OnLeave" || desc == "Absent" || desc == "Weekend")
+                        desc = leaveDesc;
+                    else
+                        desc = desc + " | " + leaveDesc;
                 }
 
                 var deducDescList = new List<string>();
@@ -688,6 +711,9 @@ public class AttendanceService : IAttendanceService
                 .GroupBy(d => d.RelatedAttendance.Date)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
+            var allLeaves = await _leaveRequestRepository.GetAllAsync();
+            var employeeLeaves = allLeaves.Where(l => l.EmployeeId == employee.Id && l.Status == MWMS.Domain.Enums.LeaveStatus.Approved && l.StartDate <= endDate && l.EndDate >= startDate).ToList();
+
             int startRow = 13;
             
             // 1. Clear all 31 days (rows 13 to 43) contents so no old template data is left
@@ -739,8 +765,18 @@ public class AttendanceService : IAttendanceService
 
                     if (periodOvertimes.TryGetValue(date, out var overtimes))
                     {
-                        var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}"));
+                        var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}{(string.IsNullOrWhiteSpace(o.Reason) ? "" : $" - {o.Reason}")}"));
                         desc = desc + " | " + otDesc;
+                    }
+                    
+                    var dateLeaves = employeeLeaves.Where(l => l.StartDate <= date && l.EndDate >= date).ToList();
+                    if (dateLeaves.Any())
+                    {
+                        var leaveDesc = string.Join(", ", dateLeaves.Select(l => $"{l.Type} Leave{(string.IsNullOrWhiteSpace(l.Reason) ? "" : $" - {l.Reason}")}"));
+                        if (desc == "OnLeave" || desc == "Absent" || desc == "Weekend")
+                            desc = leaveDesc;
+                        else
+                            desc = desc + " | " + leaveDesc;
                     }
                     
                     var deducDescList = new List<string>();
@@ -782,8 +818,18 @@ public class AttendanceService : IAttendanceService
                     string desc = isWeekend ? "Weekend" : "Absent";
                     if (periodOvertimes.TryGetValue(date, out var overtimes))
                     {
-                        var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}"));
+                        var otDesc = string.Join(", ", overtimes.Select(o => $"{o.Type} from {o.StartTime} to {o.EndTime}{(string.IsNullOrWhiteSpace(o.Reason) ? "" : $" - {o.Reason}")}"));
                         desc = desc + " | " + otDesc;
+                    }
+
+                    var dateLeaves = employeeLeaves.Where(l => l.StartDate <= date && l.EndDate >= date).ToList();
+                    if (dateLeaves.Any())
+                    {
+                        var leaveDesc = string.Join(", ", dateLeaves.Select(l => $"{l.Type} Leave{(string.IsNullOrWhiteSpace(l.Reason) ? "" : $" - {l.Reason}")}"));
+                        if (desc == "OnLeave" || desc == "Absent" || desc == "Weekend")
+                            desc = leaveDesc;
+                        else
+                            desc = desc + " | " + leaveDesc;
                     }
 
                     var deducDescList = new List<string>();
